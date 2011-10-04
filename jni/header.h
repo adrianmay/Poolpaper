@@ -17,10 +17,6 @@ void renderFrame();
 void bitmap(int id);
 
 
-extern GLuint gProgram;
-extern GLuint gvPositionHandle;
-extern GLuint gvTexHandle;
-extern GLuint gvSamplerHandle;
 
 GLuint createProgram(const char* pVertexSource, const char* pFragmentSource);
 void printGLString(const char *name, GLenum s);

@@ -2,24 +2,24 @@ package com.didlio.android.poolpaper;
       
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
-   
+     
 import android.content.Context;  
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.Matrix;  
-import android.opengl.GLSurfaceView; 
+import android.graphics.BitmapFactory; 
+import android.graphics.Matrix;    
+import android.opengl.GLSurfaceView;     
 import android.opengl.GLUtils;
-
-import com.didlio.android.poolpaper.*; 
  
-
+import com.didlio.android.poolpaper.*;       
+ 
+      
 public class PoolpaperRenderer implements GLSurfaceView.Renderer {
 
 	private PoolpaperService service;
 	public PoolpaperRenderer(PoolpaperService s) {service=s;}
     public void onDrawFrame(GL10 gl) {
-        C.step(); 
-    }
+        C.step();          
+    }                
 
     public void onSurfaceChanged(GL10 gl, int width, int height) {
         C.init(width, height);
@@ -56,7 +56,7 @@ public class PoolpaperRenderer implements GLSurfaceView.Renderer {
         Bitmap bmp = Bitmap.createBitmap(temp, 0, 0, temp.getWidth(), temp.getHeight(), flip, true);
         temp.recycle();
         
-        gl.glBindTexture(GL10.GL_TEXTURE_2D, id);
+        gl.glBindTexture(GL10.GL_TEXTURE_2D, id); 
         
         // Set all of our texture parameters:
         gl.glTexParameterf(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_MIN_FILTER, GL10.GL_LINEAR_MIPMAP_NEAREST);
@@ -69,7 +69,7 @@ public class PoolpaperRenderer implements GLSurfaceView.Renderer {
             // Push the bitmap onto the GPU:
             GLUtils.texImage2D(GL10.GL_TEXTURE_2D, level, bmp, 0);
             
-            // We need to stop when the texture is 1x1:
+            // We need to stop when the texture is 1x1:   
             if(height==1 && width==1) break;
             
             // Resize, and let's go again:  
