@@ -26,9 +26,9 @@ static const char gVertexShader[] =
     "attribute vec2 a_texCoord;\n"
     "varying vec2 v_texCoord;\n"
     "void main() {\n"
-    "  v_texCoord = a_texCoord;\n"
+    "  v_texCoord = 50.0*a_texCoord;\n"
     "  gl_Position = a_position;\n"
-    "  gl_Position.z = 0.1*(gl_Position.x+0.5)*sin(10.0*gl_Position.x + u_time);\n"
+//    "  gl_Position.z = 0.1*(gl_Position.x+0.5)*sin(10.0*gl_Position.x + u_time);\n"
     "  gl_Position = u_trans * gl_Position;\n"
     "}\n";
 
@@ -39,6 +39,7 @@ static const char gFragmentShader[] =
     "void main() {\n"
 //    "  gl_FragColor = vec4 ( v_texCoord.x, v_texCoord.y, 0.0, 1.0 ) ;\n"
     "  gl_FragColor = texture2D(u_texture, v_texCoord);\n"
+    "  gl_FragColor.w = 1.0;\n"
     "}\n";
 
 struct Vertex {
@@ -48,12 +49,15 @@ struct Vertex {
 	GLfloat tx;
 	GLfloat ty;
 };
-const int VERTEX_GAPS=40.0f;
+const int VERTEX_GAPS=100.0f;
 const GLfloat VERTEX_PLANE_WIDTH = 1.0f;
-Vertex vertices[VERTEX_GAPS+1][VERTEX_GAPS+1]; 
+
 #define VERTEX_COUNT (VERTEX_GAPS+1)*(VERTEX_GAPS+1)
 #define INDEX_COUNT 2*(VERTEX_GAPS*(VERTEX_GAPS+2)-1)
+
+Vertex vertices[VERTEX_GAPS+1][VERTEX_GAPS+1];
 GLushort indices[INDEX_COUNT];
+GLfloat velocities[VERTEX_GAPS+1][VERTEX_GAPS+1];
 
 GLfloat matrix[16];
 
@@ -105,12 +109,13 @@ struct Matrix
 				e[row][col]=res;
 			}
 	}
-	void stretch(GLfloat x, GLfloat y)
+	void stretch(GLfloat x, GLfloat y, GLfloat z)
 	{
 		for (int col=0;col<4;col++)
 		{
 			e[0][col]*=x;
 			e[1][col]*=y;
+			e[2][col]*=z;
 		}
 	}
 };
@@ -127,6 +132,7 @@ void init_vertices()
            vertices[x][y].z=0.0f;
            vertices[x][y].tx=((GLfloat)x)/(VERTEX_GAPS);
            vertices[x][y].ty=((GLfloat)y)/(VERTEX_GAPS);
+           velocities[x][y]=0.0;
        }
     i=0;
     for (x=0;x<VERTEX_GAPS;x++)
@@ -139,10 +145,83 @@ void init_vertices()
     		indices[i++]=(x+1)*(VERTEX_GAPS+1)+y;
     	}
     	if (x!=VERTEX_GAPS-1)
-    		indices[i++]=(x+1)*(VERTEX_GAPS+1);
+    		indices[i++]=(x+1)*(VERTEX_GAPS+1)+y-1;
     }
 }
 
+#define PLOP_RATE 2000
+#define PLOP_SIZE 0.001
+#define PLOP_WIDTH 1.0
+
+float dir=1.0;
+
+void plop()
+{
+   int x,y;
+	if (rand()%PLOP_RATE)
+	{
+		dir *=-1.0;
+		x = rand()%(VERTEX_GAPS+1);
+		y = rand()%(VERTEX_GAPS+1);
+		int n = (int)(PLOP_WIDTH*3.0);
+		for (int i=-n;i<=n;i++)
+			for (int j=-n;j<=n;j++)
+				if (x+i>=0 && x+i<=VERTEX_GAPS && y+j>=0 && y+j<=VERTEX_GAPS)
+				{
+					GLfloat dist = sqrt((float)i*i+j*j)/PLOP_WIDTH;
+					GLfloat plop = dir*PLOP_SIZE*sin(dist)/(0.3+dist);
+					velocities[x+i][y+j]+=plop;
+				}
+	}
+
+}
+
+void plop_()
+{
+	if (rand()%PLOP_RATE)
+	{
+		int x = rand()%(VERTEX_GAPS-1)+1;
+		int y = rand()%(VERTEX_GAPS-1)+1;
+		velocities[x][y] -= dir*PLOP_SIZE;
+		velocities[x+1][y] += dir*PLOP_SIZE/4.0;
+		velocities[x-1][y] += dir*PLOP_SIZE/4.0;
+		velocities[x][y+1] += dir*PLOP_SIZE/4.0;
+		velocities[x][y-1] += dir*PLOP_SIZE/4.0;
+	}
+}
+
+void adjust_vertices()
+{
+   int x,y;
+   plop();
+   for (x=1;x<VERTEX_GAPS;x++)
+	   for (y=1;y<VERTEX_GAPS;y++)
+		   vertices[x][y].z += velocities[x][y];
+   for (x=1;x<VERTEX_GAPS;x++)
+	   for (y=1;y<VERTEX_GAPS;y++)
+	   {
+		   GLfloat acc = (
+				   vertices[x][y+1].z +
+				   vertices[x][y-1].z +
+				   vertices[x+1][y].z +
+				   vertices[x-1][y].z
+			   ) / 4.0 - vertices[x][y].z;
+		   velocities[x][y] += acc/10.0;
+		   //velocities[x][y] *= 0.999;
+	   }
+   for (int i=0;i<VERTEX_GAPS+1;i++)
+   {
+	   vertices[0][i].z = vertices[1][i].z;
+	   velocities[0][i] = velocities[1][i];
+	   vertices[VERTEX_GAPS][i].z = vertices[VERTEX_GAPS-1][i].z;
+	   velocities[VERTEX_GAPS][i] = velocities[VERTEX_GAPS-1][i];
+
+	   vertices[i][0].z = vertices[i][1].z;
+	   velocities[i][0] = velocities[i][1];
+	   vertices[i][VERTEX_GAPS].z = vertices[i][VERTEX_GAPS-1].z;
+	   velocities[i][VERTEX_GAPS] = velocities[i][VERTEX_GAPS-1];
+   }
+}
 bool setupGraphics(int w, int h) {
 	width=w; height=h;
     printGLString("Version", GL_VERSION);
@@ -167,23 +246,23 @@ bool setupGraphics(int w, int h) {
 
     glViewport(0, 0, w, h);
     checkGlError("glViewport");
-    glEnable(GL_DEPTH_TEST);
     return true;
 }
 
 GLfloat angle1=0;
-GLfloat angle2=-0.4;
+GLfloat angle2=-2.0;
 
 void renderFrame() {
-	angle1+=0.02f;
+    glEnable(GL_DEPTH_TEST);
+	angle1+=0.002f;
 	//angle2+=0.0084f;
-
-	Matrix m_tot, m_rot_x, m_rot_y, m_pers, m_scale;
-	m_scale.stretch(1.0f, 1.0f*width/height);
-	m_rot_y.rot_y(angle1);
+	adjust_vertices();
+	Matrix m_tot, m_rot_x, m_rot_z, m_pers, m_scale;
+	m_scale.stretch(4.0f, 4.0f*width/height, 1.0);
+	m_rot_z.rot_z(angle1);
 	m_rot_x.rot_x(angle2);
 	m_pers.pers(0.55);
-	m_tot.premul(m_rot_y);
+	m_tot.premul(m_rot_z);
 	m_tot.premul(m_rot_x);
 	m_tot.premul(m_pers);
 	m_tot.premul(m_scale);

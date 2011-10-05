@@ -12,23 +12,23 @@ import android.opengl.GLUtils;
  
 import com.didlio.android.poolpaper.*;       
  
-      
+          
 public class PoolpaperRenderer implements GLSurfaceView.Renderer {
 
 	private PoolpaperService service;
 	public PoolpaperRenderer(PoolpaperService s) {service=s;}
     public void onDrawFrame(GL10 gl) {
         C.step();          
-    }                
+    }                              
 
     public void onSurfaceChanged(GL10 gl, int width, int height) {
         C.init(width, height);
-    } 
+    }                  
 
-    public void onSurfaceCreated(GL10 gl, EGLConfig config) {
-        C.bitmap(loadTexture(gl, service, R.drawable.stars_stripes_1024));         
+    public void onSurfaceCreated(GL10 gl, EGLConfig config) {   
+        C.bitmap(loadTexture(gl, service, R.drawable.white_cross_on_blue));         
     }
-	
+	     
  // Get a new texture id:
     private static int newTextureID(GL10 gl) {
         int[] temp = new int[1];
@@ -56,7 +56,7 @@ public class PoolpaperRenderer implements GLSurfaceView.Renderer {
         Bitmap bmp = Bitmap.createBitmap(temp, 0, 0, temp.getWidth(), temp.getHeight(), flip, true);
         temp.recycle();
         
-        gl.glBindTexture(GL10.GL_TEXTURE_2D, id); 
+        gl.glBindTexture(GL10.GL_TEXTURE_2D, id);    
         
         // Set all of our texture parameters:
         gl.glTexParameterf(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_MIN_FILTER, GL10.GL_LINEAR_MIPMAP_NEAREST);
