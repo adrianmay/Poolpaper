@@ -120,36 +120,8 @@ struct Matrix
 	}
 };
 
-void init_vertices()
-{
 
-   int x,y,i;
-   for (x=0;x<VERTEX_GAPS+1;x++) 
-       for (y=0;y<VERTEX_GAPS+1;y++) 
-       {
-           vertices[x][y].x=((GLfloat)(x-VERTEX_GAPS/2))*VERTEX_PLANE_WIDTH/VERTEX_GAPS;
-           vertices[x][y].y=((GLfloat)(y-VERTEX_GAPS/2))*VERTEX_PLANE_WIDTH/VERTEX_GAPS;
-           vertices[x][y].z=0.0f;
-           vertices[x][y].tx=((GLfloat)x)/(VERTEX_GAPS);
-           vertices[x][y].ty=((GLfloat)y)/(VERTEX_GAPS);
-           velocities[x][y]=0.0;
-       }
-    i=0;
-    for (x=0;x<VERTEX_GAPS;x++)
-    {
-    	if (x!=0)
-    		indices[i++]=x*(VERTEX_GAPS+1);
-    	for (y=0;y<VERTEX_GAPS+1;y++)
-    	{
-    		indices[i++]=x*(VERTEX_GAPS+1)+y;
-    		indices[i++]=(x+1)*(VERTEX_GAPS+1)+y;
-    	}
-    	if (x!=VERTEX_GAPS-1)
-    		indices[i++]=(x+1)*(VERTEX_GAPS+1)+y-1;
-    }
-}
-
-#define PLOP_RATE 2000
+#define PLOP_RATE 1200
 #define PLOP_SIZE 0.001
 #define PLOP_WIDTH 1.0
 
@@ -161,33 +133,20 @@ void plop()
 	if (rand()%PLOP_RATE)
 	{
 		dir *=-1.0;
+		GLfloat plop_width = PLOP_WIDTH;//*(rand()%2+1);
 		x = rand()%(VERTEX_GAPS+1);
 		y = rand()%(VERTEX_GAPS+1);
-		int n = (int)(PLOP_WIDTH*3.0);
+		int n = (int)(PLOP_WIDTH*5.0);
 		for (int i=-n;i<=n;i++)
 			for (int j=-n;j<=n;j++)
 				if (x+i>=0 && x+i<=VERTEX_GAPS && y+j>=0 && y+j<=VERTEX_GAPS)
 				{
-					GLfloat dist = sqrt((float)i*i+j*j)/PLOP_WIDTH;
+					GLfloat dist = sqrt((float)i*i+j*j)/plop_width;
 					GLfloat plop = dir*PLOP_SIZE*sin(dist)/(0.3+dist);
 					velocities[x+i][y+j]+=plop;
 				}
 	}
 
-}
-
-void plop_()
-{
-	if (rand()%PLOP_RATE)
-	{
-		int x = rand()%(VERTEX_GAPS-1)+1;
-		int y = rand()%(VERTEX_GAPS-1)+1;
-		velocities[x][y] -= dir*PLOP_SIZE;
-		velocities[x+1][y] += dir*PLOP_SIZE/4.0;
-		velocities[x-1][y] += dir*PLOP_SIZE/4.0;
-		velocities[x][y+1] += dir*PLOP_SIZE/4.0;
-		velocities[x][y-1] += dir*PLOP_SIZE/4.0;
-	}
 }
 
 void adjust_vertices()
@@ -206,7 +165,7 @@ void adjust_vertices()
 				   vertices[x+1][y].z +
 				   vertices[x-1][y].z
 			   ) / 4.0 - vertices[x][y].z;
-		   velocities[x][y] += acc/10.0;
+		   velocities[x][y] += acc/6.0;
 		   //velocities[x][y] *= 0.999;
 	   }
    for (int i=0;i<VERTEX_GAPS+1;i++)
@@ -222,6 +181,40 @@ void adjust_vertices()
 	   velocities[i][VERTEX_GAPS] = velocities[i][VERTEX_GAPS-1];
    }
 }
+
+void init_vertices()
+{
+
+   int x,y,i;
+   for (x=0;x<VERTEX_GAPS+1;x++)
+       for (y=0;y<VERTEX_GAPS+1;y++)
+       {
+           vertices[x][y].x=((GLfloat)(x-VERTEX_GAPS/2))*VERTEX_PLANE_WIDTH/VERTEX_GAPS;
+           vertices[x][y].y=((GLfloat)(y-VERTEX_GAPS/2))*VERTEX_PLANE_WIDTH/VERTEX_GAPS;
+           vertices[x][y].z=0.0f;
+           vertices[x][y].tx=((GLfloat)x)/(VERTEX_GAPS);
+           vertices[x][y].ty=((GLfloat)y)/(VERTEX_GAPS);
+           velocities[x][y]=0.0;
+       }
+   for (i=0;i<200;i++)
+	   plop();
+   i=0;
+
+    for (x=0;x<VERTEX_GAPS;x++)
+    {
+    	if (x!=0)
+    		indices[i++]=x*(VERTEX_GAPS+1);
+    	for (y=0;y<VERTEX_GAPS+1;y++)
+    	{
+    		indices[i++]=x*(VERTEX_GAPS+1)+y;
+    		indices[i++]=(x+1)*(VERTEX_GAPS+1)+y;
+    	}
+    	if (x!=VERTEX_GAPS-1)
+    		indices[i++]=(x+1)*(VERTEX_GAPS+1)+y-1;
+    }
+}
+
+
 bool setupGraphics(int w, int h) {
 	width=w; height=h;
     printGLString("Version", GL_VERSION);
