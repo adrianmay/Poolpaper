@@ -36,9 +36,9 @@ static const char gVertexShader[] =
     "  v_normal.z = c_one;\n"
     "  v_normal = normalize(v_normal);\n"
     "  v_reflect = normalize(a_position - u_eyepos);\n"
-//	"  v_reflect = reflect(v_reflect, v_normal);\n"
+	"  v_reflect = reflect(v_reflect, v_normal);\n"
 //	"  v_reflect -= c_two * dot(v_normal, v_reflect) * v_normal;\n"
-	"  v_reflect.z = -v_reflect.z;\n"
+//	"  v_reflect.z = -v_reflect.z;\n"
     "  gl_Position = vec4(a_position.x, a_position.y, a_position.z, 1.0);\n"
     "  gl_Position = u_trans * gl_Position;\n"
     "}\n";
@@ -56,7 +56,7 @@ static const char gFragmentShader[] =
     "void main() {\n"
     "  gl_FragColor = ((v_normal.x+v_normal.y)/2.0)*c_darkblue+(1.0-(v_normal.x+v_normal.y)/2.0)*c_lightblue"
 //	"               + (( dot(normalize(gl_Position-u_sunpos),v_reflect) >= u_sunsize) ? c_white : c_darkblue)"
-	"               +  ((dot(normalize(u_sunpos),normalize(v_reflect)) >= 0.88) ? 1.0 : 0.0)*c_white"
+	"               +  ((dot(normalize(u_sunpos),normalize(v_reflect)) >= u_sunsize) ? 1.0 : 0.0)*c_white"
 	";\n"
 //    "  gl_FragColor = texture2D(u_texture, v_normal);\n"
     "  gl_FragColor.w = 1.0;\n"
@@ -122,9 +122,9 @@ struct Matrix
 	void rot_z(GLfloat angle) { rot(angle, 0,1); }
 	void rot_x(GLfloat angle) { rot(angle, 1,2); }
 	void rot_y(GLfloat angle) { rot(angle, 2,0); }
-	void pers(float sev)
+	void pers(float dist)
 	{
-		e[3][2]=sev;
+		e[3][2]=1.0/dist;
 	}
 	void premul(Matrix & pre)
 	{
@@ -151,7 +151,7 @@ struct Matrix
 
 
 #define PLOP_RATE 1200
-#define PLOP_SIZE 0.001
+#define PLOP_SIZE 0.0005
 #define PLOP_WIDTH 1.0
 
 float dir=1.0;
@@ -263,7 +263,7 @@ void init_vertices()
 
 GLfloat eye_long = 0;
 GLfloat eye_lat = 2.0;
-GLfloat eye_dist = 2.0;
+GLfloat eye_dist = 1.5;
 Vec3 eye;
 
 bool setupGraphics(int w, int h) {
@@ -314,7 +314,7 @@ void renderFrame() {
 	m_scale.stretch(4.0f, 4.0f*width/height, 1.0);
 	m_rot_z.rot_z(-eye_long);
 	m_rot_x.rot_x(-eye_lat);
-	m_pers.pers(0.55);
+	m_pers.pers(eye_dist);
 	m_tot.premul(m_rot_z);
 	m_tot.premul(m_rot_x);
 	m_tot.premul(m_pers);
@@ -339,8 +339,8 @@ void renderFrame() {
 //    glUniform1i ( gvSamplerHandle, 0 );
     glUniform3f ( gvEyepos, eye.x, eye.y, eye.z ); checkGlError("set Eyepos");
     glUniformMatrix4fv(	gvTrans, 1, false, matrix); checkGlError("set matrix");
-    glUniform1f ( gvSunsize, cos(35.0*2*3.14159/360.0) ); checkGlError("set Eyesize");
-    glUniform3f ( gvSunpos, 0.0, eye_dist*cos(eye_lat), eye_dist*sin(eye_lat) ); checkGlError("set Eyepos");
+    glUniform1f ( gvSunsize, cos(5.0*2*3.14159/360.0) ); checkGlError("set Eyesize");
+    glUniform3f ( gvSunpos, -eye_dist*cos(eye_lat), 0.0, eye_dist*sin(eye_lat) ); checkGlError("set Eyepos");
 
     //glDrawArrays(GL_TRIANGLES, 0, 3);
     glDrawElements(GL_TRIANGLE_STRIP, INDEX_COUNT, GL_UNSIGNED_SHORT, indices); checkGlError("glDrawElements");

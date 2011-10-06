@@ -54,8 +54,8 @@ public class PoolpaperRenderer implements GLSurfaceView.Renderer {
         // Load up, and flip the texture:
         Bitmap temp = BitmapFactory.decodeResource(context.getResources(), resource, opts);
         Bitmap bmp = Bitmap.createBitmap(temp, 0, 0, temp.getWidth(), temp.getHeight(), flip, true);
-        temp.recycle();
-                                                    
+        temp.recycle(); 
+                                                            
         gl.glBindTexture(GL10.GL_TEXTURE_2D, id);    
         
         // Set all of our texture parameters:
