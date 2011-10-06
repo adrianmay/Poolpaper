@@ -55,7 +55,7 @@ static const char gFragmentShader[] =
     "void main() {\n"
     "  gl_FragColor = ((v_normal.x+v_normal.y)/2.0)*c_darkblue+(1.0-(v_normal.x+v_normal.y)/2.0)*c_lightblue"
 //	"               + (( dot(normalize(gl_Position-u_sunpos),v_reflect) >= u_sunsize) ? c_white : c_darkblue)"
-//	"               +  c_white "
+	"               +  ((dot(normalize(u_sunpos),v_reflect) >= 0.55) ? 1.0 : 0.0)*c_white"
 	";\n"
 //    "  gl_FragColor = texture2D(u_texture, v_normal);\n"
     "  gl_FragColor.w = 1.0;\n"
@@ -289,8 +289,6 @@ bool setupGraphics(int w, int h) {
     gvSunpos = glGetUniformLocation(gProgram, "u_sunpos"); checkGlError("glGetAttribLocation");
     gvSunsize = glGetUniformLocation(gProgram, "u_sunsize"); checkGlError("glGetAttribLocation");
 
-    glUniform1f ( gvSunsize, cos(5.0*2*3.14159/360.0) ); checkGlError("set Eyesize");
-    glUniform4f ( gvSunpos, 0.0, eye_dist*cos(eye_lat), eye_dist*sin(eye_lat), 1.0 ); checkGlError("set Eyepos");
 
     glEnable(GL_DEPTH_TEST);
     glViewport(0, 0, w, h);
@@ -340,6 +338,8 @@ void renderFrame() {
 //    glUniform1i ( gvSamplerHandle, 0 );
     glUniform4f ( gvEyepos, eye.x, eye.y, eye.z, 1.0 ); checkGlError("set Eyepos");
     glUniformMatrix4fv(	gvTrans, 1, false, matrix); checkGlError("set matrix");
+    glUniform1f ( gvSunsize, cos(35.0*2*3.14159/360.0) ); checkGlError("set Eyesize");
+    glUniform4f ( gvSunpos, 0.0, eye_dist*cos(eye_lat), eye_dist*sin(eye_lat), 1.0 ); checkGlError("set Eyepos");
 
     //glDrawArrays(GL_TRIANGLES, 0, 3);
     glDrawElements(GL_TRIANGLE_STRIP, INDEX_COUNT, GL_UNSIGNED_SHORT, indices); checkGlError("glDrawElements");
