@@ -37,7 +37,9 @@ static const char gVertexShader[] =
     "  v_normal.w = c_one;\n"
     "  v_normal = normalize(v_normal);\n"
     "  v_reflect = normalize(a_position - u_eyepos);\n"
-	"  v_reflect -= c_two * dot(v_normal, v_reflect) * v_normal;\n"
+	"  v_reflect = reflect(v_reflect, v_normal);\n"
+//	"  v_reflect -= c_two * dot(v_normal, v_reflect) * v_normal;\n"
+//	"  v_reflect.z = -v_reflect.z;\n"
     "  gl_Position = a_position;\n"
     "  gl_Position = u_trans * gl_Position;\n"
     "}\n";
@@ -55,7 +57,7 @@ static const char gFragmentShader[] =
     "void main() {\n"
     "  gl_FragColor = ((v_normal.x+v_normal.y)/2.0)*c_darkblue+(1.0-(v_normal.x+v_normal.y)/2.0)*c_lightblue"
 //	"               + (( dot(normalize(gl_Position-u_sunpos),v_reflect) >= u_sunsize) ? c_white : c_darkblue)"
-	"               +  ((dot(normalize(u_sunpos),v_reflect) >= 0.55) ? 1.0 : 0.0)*c_white"
+	"               +  ((dot(normalize(u_sunpos),normalize(v_reflect)) >= 0.88) ? 1.0 : 0.0)*c_white"
 	";\n"
 //    "  gl_FragColor = texture2D(u_texture, v_normal);\n"
     "  gl_FragColor.w = 1.0;\n"
@@ -306,7 +308,7 @@ void update_eye_cartesian()
 }
 
 void renderFrame() {
-	eye_long+=0.002f;
+	eye_long+=0.02f;
 	update_eye_cartesian();
 	adjust_vertices();
 	Matrix m_tot, m_rot_x, m_rot_z, m_pers, m_scale;
