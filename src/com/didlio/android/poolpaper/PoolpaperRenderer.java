@@ -12,9 +12,9 @@ import android.opengl.GLUtils;
  
 import com.didlio.android.poolpaper.*;       
  
-            
+                
 public class PoolpaperRenderer implements GLSurfaceView.Renderer {
-                           
+                               
 	private PoolpaperService service;
 	public PoolpaperRenderer(PoolpaperService s) {service=s;}
     public void onDrawFrame(GL10 gl) {                    
