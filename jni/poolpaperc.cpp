@@ -64,7 +64,7 @@ static const char gFragmentShader[] =
 //    "			     ((v_normal.x+v_normal.y)/2.0)*c_darkblue+(1.0-(v_normal.x+v_normal.y)/2.0)*c_lightblue"
 //	"               + (( dot(normalize(gl_Position-u_sunpos),v_reflect) >= u_sunsize) ? c_white : c_darkblue)"
 	"                 ((dot(normalize(u_sunpos),normalize(v_reflect)) >= u_sunsize) ? 1.0 : 0.0)*c_white"
-	"               +  texture2D(u_texture, 8.0*vec2(v_position.x+(u_depth/v_refract.z)*v_refract.x , v_position.y+(u_depth/v_refract.z)*v_refract.y))"
+	"               +  texture2D(u_texture, vec2(v_position.x+(u_depth/v_refract.z)*v_refract.x , v_position.y+(u_depth/v_refract.z)*v_refract.y))"
 	";\n"
 //    "  gl_FragColor = texture2D(u_texture, v_normal);\n"
     "  gl_FragColor.w = 1.0;\n"
