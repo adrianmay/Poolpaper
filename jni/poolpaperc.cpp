@@ -14,7 +14,7 @@ GLfloat width, height;
 
 GLuint gProgram;
 GLuint gvPositionHandle;
-GLuint gvTexHandle;
+GLuint gvNormal;
 GLuint gvSamplerHandle;
 GLuint gvTrans;
 GLuint gvTime;
@@ -23,10 +23,10 @@ static const char gVertexShader[] =
     "uniform mat4 u_trans;\n"
     "uniform float u_time;\n"
     "attribute vec4 a_position;\n"
-    "attribute vec2 a_texCoord;\n"
-    "varying vec2 v_texCoord;\n"
+    "attribute vec2 a_normal;\n"
+    "varying vec2 v_normal;\n"
     "void main() {\n"
-    "  v_texCoord = 50.0*a_texCoord;\n"
+    "  v_normal = a_normal;\n"
     "  gl_Position = a_position;\n"
 //    "  gl_Position.z = 0.1*(gl_Position.x+0.5)*sin(10.0*gl_Position.x + u_time);\n"
     "  gl_Position = u_trans * gl_Position;\n"
@@ -34,21 +34,30 @@ static const char gVertexShader[] =
 
 static const char gFragmentShader[] = 
     "precision mediump float;\n"
-    "varying vec2 v_texCoord;\n"
+    "varying vec2 v_normal;\n"
     "uniform sampler2D u_texture;\n"
     "void main() {\n"
-//    "  gl_FragColor = vec4 ( v_texCoord.x, v_texCoord.y, 0.0, 1.0 ) ;\n"
-    "  gl_FragColor = texture2D(u_texture, v_texCoord);\n"
+    "  gl_FragColor = ((v_normal.x+v_normal.y)/2.0)*vec4(0.0,0.0,0.25,1.0)+(1.0-(v_normal.x+v_normal.y)/2.0)*vec4(0.8,0.8,1.0,1.0) ;\n"
+//    "  gl_FragColor = texture2D(u_texture, v_normal);\n"
     "  gl_FragColor.w = 1.0;\n"
     "}\n";
 
-struct Vertex {
+struct Vec2 {
+	GLfloat x;
+	GLfloat y;
+};
+
+struct Vec3 {
 	GLfloat x;
 	GLfloat y;
 	GLfloat z;
-	GLfloat tx;
-	GLfloat ty;
 };
+
+struct Vertex {
+	Vec3 pos;
+	Vec2 norm;
+};
+
 const int VERTEX_GAPS=100.0f;
 const GLfloat VERTEX_PLANE_WIDTH = 1.0f;
 
@@ -151,34 +160,52 @@ void plop()
 
 void adjust_vertices()
 {
-   int x,y;
+   int x,y,i;
    plop();
    for (x=1;x<VERTEX_GAPS;x++)
 	   for (y=1;y<VERTEX_GAPS;y++)
-		   vertices[x][y].z += velocities[x][y];
+		   vertices[x][y].pos.z += velocities[x][y];
    for (x=1;x<VERTEX_GAPS;x++)
 	   for (y=1;y<VERTEX_GAPS;y++)
 	   {
 		   GLfloat acc = (
-				   vertices[x][y+1].z +
-				   vertices[x][y-1].z +
-				   vertices[x+1][y].z +
-				   vertices[x-1][y].z
-			   ) / 4.0 - vertices[x][y].z;
+				   vertices[x][y+1].pos.z +
+				   vertices[x][y-1].pos.z +
+				   vertices[x+1][y].pos.z +
+				   vertices[x-1][y].pos.z
+			   ) / 4.0 - vertices[x][y].pos.z;
 		   velocities[x][y] += acc/6.0;
 		   //velocities[x][y] *= 0.999;
 	   }
-   for (int i=0;i<VERTEX_GAPS+1;i++)
+   for (i=0;i<VERTEX_GAPS+1;i++)
    {
-	   vertices[0][i].z = vertices[1][i].z;
+	   vertices[0][i].pos.z = vertices[1][i].pos.z;
 	   velocities[0][i] = velocities[1][i];
-	   vertices[VERTEX_GAPS][i].z = vertices[VERTEX_GAPS-1][i].z;
+	   vertices[VERTEX_GAPS][i].pos.z = vertices[VERTEX_GAPS-1][i].pos.z;
 	   velocities[VERTEX_GAPS][i] = velocities[VERTEX_GAPS-1][i];
 
-	   vertices[i][0].z = vertices[i][1].z;
+	   vertices[i][0].pos.z = vertices[i][1].pos.z;
 	   velocities[i][0] = velocities[i][1];
-	   vertices[i][VERTEX_GAPS].z = vertices[i][VERTEX_GAPS-1].z;
+	   vertices[i][VERTEX_GAPS].pos.z = vertices[i][VERTEX_GAPS-1].pos.z;
 	   velocities[i][VERTEX_GAPS] = velocities[i][VERTEX_GAPS-1];
+   }
+   for (x=1;x<VERTEX_GAPS;x++)
+	   for (y=1;y<VERTEX_GAPS;y++)
+	   {
+		   vertices[x][y].norm.x = ( vertices[x-1][y].pos.z - vertices[x+1][y].pos.z ) / (2*VERTEX_PLANE_WIDTH/VERTEX_GAPS);
+		   vertices[x][y].norm.y = ( vertices[x][y-1].pos.z - vertices[x][y+1].pos.z ) / (2*VERTEX_PLANE_WIDTH/VERTEX_GAPS);
+	   }
+   for (i=0;i<VERTEX_GAPS+1;i++)
+   {
+	   vertices[0][i].norm.x = vertices[1][i].norm.x;
+	   vertices[0][i].norm.y = vertices[1][i].norm.y;
+	   vertices[VERTEX_GAPS][i].norm.x = vertices[VERTEX_GAPS-1][i].norm.x;
+	   vertices[VERTEX_GAPS][i].norm.y = vertices[VERTEX_GAPS-1][i].norm.y;
+	   vertices[i][0].norm.x = vertices[i][1].norm.x;
+	   vertices[i][0].norm.y = vertices[i][1].norm.y;
+	   vertices[i][VERTEX_GAPS].norm.x = vertices[i][VERTEX_GAPS-1].norm.x;
+	   vertices[i][VERTEX_GAPS].norm.y = vertices[i][VERTEX_GAPS-1].norm.y;
+
    }
 }
 
@@ -189,11 +216,11 @@ void init_vertices()
    for (x=0;x<VERTEX_GAPS+1;x++)
        for (y=0;y<VERTEX_GAPS+1;y++)
        {
-           vertices[x][y].x=((GLfloat)(x-VERTEX_GAPS/2))*VERTEX_PLANE_WIDTH/VERTEX_GAPS;
-           vertices[x][y].y=((GLfloat)(y-VERTEX_GAPS/2))*VERTEX_PLANE_WIDTH/VERTEX_GAPS;
-           vertices[x][y].z=0.0f;
-           vertices[x][y].tx=((GLfloat)x)/(VERTEX_GAPS);
-           vertices[x][y].ty=((GLfloat)y)/(VERTEX_GAPS);
+           vertices[x][y].pos.x=((GLfloat)(x-VERTEX_GAPS/2))*VERTEX_PLANE_WIDTH/VERTEX_GAPS;
+           vertices[x][y].pos.y=((GLfloat)(y-VERTEX_GAPS/2))*VERTEX_PLANE_WIDTH/VERTEX_GAPS;
+           vertices[x][y].pos.z=0.0f;
+           vertices[x][y].norm.x=((GLfloat)x)/(VERTEX_GAPS);
+           vertices[x][y].norm.y=((GLfloat)y)/(VERTEX_GAPS);
            velocities[x][y]=0.0;
        }
    for (i=0;i<200;i++)
@@ -232,7 +259,7 @@ bool setupGraphics(int w, int h) {
         return false;
     }
     gvPositionHandle = glGetAttribLocation(gProgram, "a_position"); checkGlError("glGetAttribLocation");
-    gvTexHandle = glGetAttribLocation(gProgram, "a_texCoord"); checkGlError("glGetAttribLocation");
+    gvNormal = glGetAttribLocation(gProgram, "a_normal"); checkGlError("glGetAttribLocation");
     gvSamplerHandle = glGetUniformLocation(gProgram, "u_sampler"); checkGlError("glGetAttribLocation");
     gvTrans = glGetUniformLocation(gProgram, "u_trans"); checkGlError("glGetAttribLocation");
     gvTime = glGetUniformLocation(gProgram, "u_time"); checkGlError("glGetAttribLocation");
@@ -272,8 +299,8 @@ void renderFrame() {
     glVertexAttribPointer(gvPositionHandle, 3, GL_FLOAT, GL_FALSE, 5*sizeof(GLfloat), vertices); checkGlError("glVertexAttribPointer");
     glEnableVertexAttribArray(gvPositionHandle); checkGlError("glEnableVertexAttribArray");
 
-    glVertexAttribPointer(gvTexHandle, 2, GL_FLOAT, GL_FALSE, 5*sizeof(GLfloat), ((char*)vertices)+3*sizeof(GLfloat)); checkGlError("glVertexAttribPointer");
-    glEnableVertexAttribArray(gvTexHandle); checkGlError("glEnableVertexAttribArray");
+    glVertexAttribPointer(gvNormal, 2, GL_FLOAT, GL_FALSE, 5*sizeof(GLfloat), ((char*)vertices)+3*sizeof(GLfloat)); checkGlError("glVertexAttribPointer");
+    glEnableVertexAttribArray(gvNormal); checkGlError("glEnableVertexAttribArray");
     glActiveTexture(GL_TEXTURE0);
     glBindTexture ( GL_TEXTURE_2D, bitmap_id );
     glUniform1f ( gvTime, time );
