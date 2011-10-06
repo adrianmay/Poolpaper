@@ -15,29 +15,40 @@ GLfloat width, height;
 GLuint gProgram;
 GLuint gvPositionHandle;
 GLuint gvNormal;
-GLuint gvSamplerHandle;
+//GLuint gvSamplerHandle;
 GLuint gvTrans;
-GLuint gvTime;
+GLuint gvEyepos;
+//GLuint gvSunpos;
+//GLuint gvSunsize;
 
 static const char gVertexShader[] = 
     "uniform mat4 u_trans;\n"
-    "uniform float u_time;\n"
+    "uniform vec4 u_eyepos;\n"
     "attribute vec4 a_position;\n"
     "attribute vec2 a_normal;\n"
-    "varying vec2 v_normal;\n"
+    "varying vec4 v_normal;\n"
+//	"varying vec4 v_reflect;\n"
     "void main() {\n"
-    "  v_normal = a_normal;\n"
+    "  v_normal.x = a_normal.x;\n"
+    "  v_normal.y = a_normal.y;\n"
+    "  v_normal.z = 1.0;\n"
+    "  v_normal.w = 1.0;\n"
+//    "  v_normal = normalize(v_normal);\n"
+//    "  v_reflect = normalize(a_position - u_eyepos);\n"
+//	"  v_reflect -= 2.0 * dot(v_normal, v_reflect) * v_normal;\n"
     "  gl_Position = a_position;\n"
-//    "  gl_Position.z = 0.1*(gl_Position.x+0.5)*sin(10.0*gl_Position.x + u_time);\n"
     "  gl_Position = u_trans * gl_Position;\n"
     "}\n";
 
 static const char gFragmentShader[] = 
     "precision mediump float;\n"
-    "varying vec2 v_normal;\n"
-    "uniform sampler2D u_texture;\n"
+//    "uniform vec4 u_sunpos;\n"
+//    "uniform float u_sunsize;\n"
+    "varying vec4 v_normal;\n"
+//	"varying vec4 v_reflect;\n"
+//    "uniform sampler2D u_texture;\n"
     "void main() {\n"
-    "  gl_FragColor = ((v_normal.x+v_normal.y)/2.0)*vec4(0.0,0.0,0.25,1.0)+(1.0-(v_normal.x+v_normal.y)/2.0)*vec4(0.8,0.8,1.0,1.0) ;\n"
+    "  gl_FragColor = ((v_normal.x+v_normal.y)/2.0)*vec4(0.0,0.0,0.1,1.0)+(1.0-(v_normal.x+v_normal.y)/2.0)*vec4(0.4,0.4,0.6,1.0) ;\n"
 //    "  gl_FragColor = texture2D(u_texture, v_normal);\n"
     "  gl_FragColor.w = 1.0;\n"
     "}\n";
@@ -241,6 +252,10 @@ void init_vertices()
     }
 }
 
+GLfloat eye_long = 0;
+GLfloat eye_lat = 2.0;
+GLfloat eye_dist = 2.0;
+Vec3 eye;
 
 bool setupGraphics(int w, int h) {
 	width=w; height=h;
@@ -260,27 +275,38 @@ bool setupGraphics(int w, int h) {
     }
     gvPositionHandle = glGetAttribLocation(gProgram, "a_position"); checkGlError("glGetAttribLocation");
     gvNormal = glGetAttribLocation(gProgram, "a_normal"); checkGlError("glGetAttribLocation");
-    gvSamplerHandle = glGetUniformLocation(gProgram, "u_sampler"); checkGlError("glGetAttribLocation");
+//    gvSamplerHandle = glGetUniformLocation(gProgram, "u_sampler"); checkGlError("glGetAttribLocation");
     gvTrans = glGetUniformLocation(gProgram, "u_trans"); checkGlError("glGetAttribLocation");
-    gvTime = glGetUniformLocation(gProgram, "u_time"); checkGlError("glGetAttribLocation");
+    gvEyepos = glGetUniformLocation(gProgram, "u_eyepos"); checkGlError("glGetAttribLocation");
+//    gvSunpos = glGetUniformLocation(gProgram, "u_sunpos"); checkGlError("glGetAttribLocation");
+//    gvSunsize = glGetUniformLocation(gProgram, "u_sunsize"); checkGlError("glGetAttribLocation");
 
+//    glUniform1f ( gvSunsize, cos(5.0*2*3.14159/360.0) ); checkGlError("set Eyesize");
+//    glUniform4f ( gvSunpos, 0.0, eye_dist*cos(eye_lat), eye_dist*sin(eye_lat), 1.0 ); checkGlError("set Eyepos");
+
+    glEnable(GL_DEPTH_TEST);
     glViewport(0, 0, w, h);
     checkGlError("glViewport");
     return true;
 }
 
-GLfloat angle1=0;
-GLfloat angle2=-2.0;
+void update_eye_cartesian()
+{
+	eye.z = eye_dist * sin(eye_lat);
+	GLfloat temp = eye_dist * cos(eye_lat);
+	eye.x = temp * sin(eye_long);
+	eye.y = -temp * cos(eye_long);
+//	vertices[(int)(VERTEX_GAPS/2 + eye.x/3.0*VERTEX_GAPS/VERTEX_PLANE_WIDTH)][(int)(VERTEX_GAPS/2 + eye.y/3.0*VERTEX_GAPS/VERTEX_PLANE_WIDTH)].pos.z+=0.03;
+}
 
 void renderFrame() {
-    glEnable(GL_DEPTH_TEST);
-	angle1+=0.002f;
-	//angle2+=0.0084f;
+	eye_long+=0.002f;
+	update_eye_cartesian();
 	adjust_vertices();
 	Matrix m_tot, m_rot_x, m_rot_z, m_pers, m_scale;
 	m_scale.stretch(4.0f, 4.0f*width/height, 1.0);
-	m_rot_z.rot_z(angle1);
-	m_rot_x.rot_x(angle2);
+	m_rot_z.rot_z(-eye_long);
+	m_rot_x.rot_x(-eye_lat);
 	m_pers.pers(0.55);
 	m_tot.premul(m_rot_z);
 	m_tot.premul(m_rot_x);
@@ -301,11 +327,11 @@ void renderFrame() {
 
     glVertexAttribPointer(gvNormal, 2, GL_FLOAT, GL_FALSE, 5*sizeof(GLfloat), ((char*)vertices)+3*sizeof(GLfloat)); checkGlError("glVertexAttribPointer");
     glEnableVertexAttribArray(gvNormal); checkGlError("glEnableVertexAttribArray");
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture ( GL_TEXTURE_2D, bitmap_id );
-    glUniform1f ( gvTime, time );
-    glUniform1i ( gvSamplerHandle, 0 );
-    glUniformMatrix4fv(	gvTrans, 1, false, matrix);
+//    glActiveTexture(GL_TEXTURE0);
+//    glBindTexture ( GL_TEXTURE_2D, bitmap_id );
+//    glUniform1i ( gvSamplerHandle, 0 );
+    glUniform4f ( gvEyepos, eye.x, eye.y, eye.z, 1.0 ); checkGlError("set Eyepos");
+    glUniformMatrix4fv(	gvTrans, 1, false, matrix); checkGlError("set matrix");
 
     //glDrawArrays(GL_TRIANGLES, 0, 3);
     glDrawElements(GL_TRIANGLE_STRIP, INDEX_COUNT, GL_UNSIGNED_SHORT, indices); checkGlError("glDrawElements");
