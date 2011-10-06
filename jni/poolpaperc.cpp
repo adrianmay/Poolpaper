@@ -202,7 +202,7 @@ void adjust_vertices()
 				   vertices[x+1][y].pos.z +
 				   vertices[x-1][y].pos.z
 			   ) / 4.0 - vertices[x][y].pos.z;
-		   velocities[x][y] += acc/6.0;
+		   velocities[x][y] += acc/1.5;
 		   //velocities[x][y] *= 0.999;
 	   }
    for (i=0;i<VERTEX_GAPS+1;i++)
