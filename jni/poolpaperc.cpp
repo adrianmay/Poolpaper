@@ -15,11 +15,12 @@ GLfloat width, height;
 GLuint gProgram;
 GLuint gvPositionHandle;
 GLuint gvNormal;
-//GLuint gvSamplerHandle;
+GLuint gvSamplerHandle;
 GLuint gvTrans;
 GLuint gvEyepos;
 GLuint gvSunpos;
 GLuint gvSunsize;
+GLuint gvDepth;
 
 static const char gVertexShader[] = 
     "const float c_one = 1.0;\n"
@@ -28,8 +29,10 @@ static const char gVertexShader[] =
     "uniform vec3 u_eyepos;\n"
     "attribute vec3 a_position;\n"
     "attribute vec2 a_normal;\n"
+    "varying vec3 v_position;\n"
     "varying vec3 v_normal;\n"
 	"varying vec3 v_reflect;\n"
+	"varying vec3 v_refract;\n"
     "void main() {\n"
     "  v_normal.x = a_normal.x;\n"
     "  v_normal.y = a_normal.y;\n"
@@ -37,8 +40,8 @@ static const char gVertexShader[] =
     "  v_normal = normalize(v_normal);\n"
     "  v_reflect = normalize(a_position - u_eyepos);\n"
 	"  v_reflect = reflect(v_reflect, v_normal);\n"
-//	"  v_reflect -= c_two * dot(v_normal, v_reflect) * v_normal;\n"
-//	"  v_reflect.z = -v_reflect.z;\n"
+	"  v_refract = refract(v_reflect, -v_normal, 0.75);\n"
+	"  v_position = a_position;\n"
     "  gl_Position = vec4(a_position.x, a_position.y, a_position.z, 1.0);\n"
     "  gl_Position = u_trans * gl_Position;\n"
     "}\n";
@@ -50,13 +53,18 @@ static const char gFragmentShader[] =
 	"const vec4 c_white = vec4(1.0,1.0,1.0,1.0);\n"
     "uniform vec3 u_sunpos;\n"
     "uniform float u_sunsize;\n"
+    "uniform float u_depth;\n"
+    "varying vec3 v_position;\n"
     "varying vec3 v_normal;\n"
 	"varying vec3 v_reflect;\n"
-//    "uniform sampler2D u_texture;\n"
+	"varying vec3 v_refract;\n"
+    "uniform sampler2D u_texture;\n"
     "void main() {\n"
-    "  gl_FragColor = ((v_normal.x+v_normal.y)/2.0)*c_darkblue+(1.0-(v_normal.x+v_normal.y)/2.0)*c_lightblue"
+    "  gl_FragColor = "
+//    "			     ((v_normal.x+v_normal.y)/2.0)*c_darkblue+(1.0-(v_normal.x+v_normal.y)/2.0)*c_lightblue"
 //	"               + (( dot(normalize(gl_Position-u_sunpos),v_reflect) >= u_sunsize) ? c_white : c_darkblue)"
-	"               +  ((dot(normalize(u_sunpos),normalize(v_reflect)) >= u_sunsize) ? 1.0 : 0.0)*c_white"
+	"                 ((dot(normalize(u_sunpos),normalize(v_reflect)) >= u_sunsize) ? 1.0 : 0.0)*c_white"
+	"               +  texture2D(u_texture, 8.0*vec2(v_position.x+(u_depth/v_refract.z)*v_refract.x , v_position.y+(u_depth/v_refract.z)*v_refract.y))"
 	";\n"
 //    "  gl_FragColor = texture2D(u_texture, v_normal);\n"
     "  gl_FragColor.w = 1.0;\n"
@@ -284,11 +292,12 @@ bool setupGraphics(int w, int h) {
     }
     gvPositionHandle = glGetAttribLocation(gProgram, "a_position"); checkGlError("glGetAttribLocation");
     gvNormal = glGetAttribLocation(gProgram, "a_normal"); checkGlError("glGetAttribLocation");
-//    gvSamplerHandle = glGetUniformLocation(gProgram, "u_sampler"); checkGlError("glGetAttribLocation");
+    gvSamplerHandle = glGetUniformLocation(gProgram, "u_sampler"); checkGlError("glGetAttribLocation");
     gvTrans = glGetUniformLocation(gProgram, "u_trans"); checkGlError("glGetAttribLocation");
     gvEyepos = glGetUniformLocation(gProgram, "u_eyepos"); checkGlError("glGetAttribLocation");
     gvSunpos = glGetUniformLocation(gProgram, "u_sunpos"); checkGlError("glGetAttribLocation");
     gvSunsize = glGetUniformLocation(gProgram, "u_sunsize"); checkGlError("glGetAttribLocation");
+    gvDepth = glGetUniformLocation(gProgram, "u_depth"); checkGlError("glGetAttribLocation");
 
 
     glEnable(GL_DEPTH_TEST);
@@ -334,12 +343,13 @@ void renderFrame() {
 
     glVertexAttribPointer(gvNormal, 2, GL_FLOAT, GL_FALSE, 5*sizeof(GLfloat), ((char*)vertices)+3*sizeof(GLfloat)); checkGlError("glVertexAttribPointer");
     glEnableVertexAttribArray(gvNormal); checkGlError("glEnableVertexAttribArray");
-//    glActiveTexture(GL_TEXTURE0);
-//    glBindTexture ( GL_TEXTURE_2D, bitmap_id );
-//    glUniform1i ( gvSamplerHandle, 0 );
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture ( GL_TEXTURE_2D, bitmap_id );
+    glUniform1i ( gvSamplerHandle, 0 );
     glUniform3f ( gvEyepos, eye.x, eye.y, eye.z ); checkGlError("set Eyepos");
     glUniformMatrix4fv(	gvTrans, 1, false, matrix); checkGlError("set matrix");
     glUniform1f ( gvSunsize, cos(5.0*2*3.14159/360.0) ); checkGlError("set Eyesize");
+    glUniform1f ( gvDepth, 0.2 ); checkGlError("set depth");
     glUniform3f ( gvSunpos, -eye_dist*cos(eye_lat), 0.0, eye_dist*sin(eye_lat) ); checkGlError("set Eyepos");
 
     //glDrawArrays(GL_TRIANGLES, 0, 3);

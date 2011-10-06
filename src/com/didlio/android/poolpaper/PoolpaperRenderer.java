@@ -19,15 +19,15 @@ public class PoolpaperRenderer implements GLSurfaceView.Renderer {
 	public PoolpaperRenderer(PoolpaperService s) {service=s;}
     public void onDrawFrame(GL10 gl) {                    
         C.step();          
-    }                              
+    }                                
 
     public void onSurfaceChanged(GL10 gl, int width, int height) {
-        C.init(width, height);
+        C.init(width, height);   
     }                  
 
     public void onSurfaceCreated(GL10 gl, EGLConfig config) {   
-        C.bitmap(loadTexture(gl, service, R.drawable.white_cross_on_blue));         
-    }
+        C.bitmap(loadTexture(gl, service, R.drawable.beige_tiles));         
+    }  
 	     
  // Get a new texture id:
     private static int newTextureID(GL10 gl) {
@@ -54,7 +54,7 @@ public class PoolpaperRenderer implements GLSurfaceView.Renderer {
         // Load up, and flip the texture:
         Bitmap temp = BitmapFactory.decodeResource(context.getResources(), resource, opts);
         Bitmap bmp = Bitmap.createBitmap(temp, 0, 0, temp.getWidth(), temp.getHeight(), flip, true);
-        temp.recycle(); 
+        temp.recycle();  
                                                             
         gl.glBindTexture(GL10.GL_TEXTURE_2D, id);    
         
