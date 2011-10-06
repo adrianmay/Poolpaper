@@ -25,8 +25,8 @@ public class PoolpaperRenderer implements GLSurfaceView.Renderer {
         C.init(width, height);   
     }                  
 
-    public void onSurfaceCreated(GL10 gl, EGLConfig config) {   
-        C.bitmap(loadTexture(gl, service, R.drawable.union_jack));         
+    public void onSurfaceCreated(GL10 gl, EGLConfig config) {             
+        C.bitmap(loadTexture(gl, service, R.drawable.beige_tiles));         
     }  
 	     
  // Get a new texture id:

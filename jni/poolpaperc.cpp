@@ -64,7 +64,7 @@ static const char gFragmentShader[] =
 //    "			     ((v_normal.x+v_normal.y)/2.0)*c_darkblue+(1.0-(v_normal.x+v_normal.y)/2.0)*c_lightblue"
 //	"               + (( dot(normalize(gl_Position-u_sunpos),v_reflect) >= u_sunsize) ? c_white : c_darkblue)"
 	"                 ((dot(normalize(u_sunpos),normalize(v_reflect)) >= u_sunsize) ? 1.0 : 0.0)*c_white"
-	"               +  texture2D(u_texture, vec2(v_position.x+(u_depth/v_refract.z)*v_refract.x , v_position.y+(u_depth/v_refract.z)*v_refract.y))"
+	"               +  texture2D(u_texture, 8.0*vec2(0.5+v_position.x+(u_depth/v_refract.z)*v_refract.x , 0.5+v_position.y+(u_depth/v_refract.z)*v_refract.y))"
 	";\n"
 //    "  gl_FragColor = texture2D(u_texture, v_normal);\n"
     "  gl_FragColor.w = 1.0;\n"
@@ -86,7 +86,7 @@ struct Vertex {
 	Vec2 norm;
 };
 
-const int VERTEX_GAPS=100.0f;
+const int VERTEX_GAPS=50.0f;
 const GLfloat VERTEX_PLANE_WIDTH = 1.0f;
 
 #define VERTEX_COUNT (VERTEX_GAPS+1)*(VERTEX_GAPS+1)
@@ -269,7 +269,7 @@ void init_vertices()
     }
 }
 
-GLfloat eye_long = 0;
+GLfloat eye_long = 1.2;
 GLfloat eye_lat = 2.0;
 GLfloat eye_dist = 1.5;
 Vec3 eye;
@@ -316,7 +316,7 @@ void update_eye_cartesian()
 }
 
 void renderFrame() {
-	eye_long+=0.02f;
+	//eye_long+=0.02f;
 	update_eye_cartesian();
 	adjust_vertices();
 	Matrix m_tot, m_rot_x, m_rot_z, m_pers, m_scale;
