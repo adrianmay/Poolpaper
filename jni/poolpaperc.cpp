@@ -22,6 +22,8 @@ GLuint gvSunpos;
 GLuint gvSunsize;
 
 static const char gVertexShader[] = 
+    "const float c_one = 1.0;\n"
+    "const float c_two = 2.0;\n"
     "uniform mat4 u_trans;\n"
     "uniform vec4 u_eyepos;\n"
     "attribute vec4 a_position;\n"
@@ -31,25 +33,30 @@ static const char gVertexShader[] =
     "void main() {\n"
     "  v_normal.x = a_normal.x;\n"
     "  v_normal.y = a_normal.y;\n"
-    "  v_normal.z = 1.0;\n"
-    "  v_normal.w = 1.0;\n"
+    "  v_normal.z = c_one;\n"
+    "  v_normal.w = c_one;\n"
     "  v_normal = normalize(v_normal);\n"
     "  v_reflect = normalize(a_position - u_eyepos);\n"
-	"  v_reflect -= 2.0 * dot(v_normal, v_reflect) * v_normal;\n"
+	"  v_reflect -= c_two * dot(v_normal, v_reflect) * v_normal;\n"
     "  gl_Position = a_position;\n"
     "  gl_Position = u_trans * gl_Position;\n"
     "}\n";
 
 static const char gFragmentShader[] = 
     "precision mediump float;\n"
+	"const vec4 c_darkblue = vec4(0.0,0.0,0.1,1.0);\n"
+	"const vec4 c_lightblue = vec4(0.4,0.4,0.6,1.0);\n"
+	"const vec4 c_white = vec4(1.0,1.0,1.0,1.0);\n"
     "uniform vec4 u_sunpos;\n"
     "uniform float u_sunsize;\n"
     "varying vec4 v_normal;\n"
 	"varying vec4 v_reflect;\n"
 //    "uniform sampler2D u_texture;\n"
     "void main() {\n"
-    "  gl_FragColor = ((v_normal.x+v_normal.y)/2.0)*vec4(0.0,0.0,0.1,1.0)+(1.0-(v_normal.x+v_normal.y)/2.0)*vec4(0.4,0.4,0.6,1.0);\n"
-//	"               + (( dot(normalize(gl_Position-u_sunpos),v_reflect) >= u_sunsize) ? vec4(1.0,1.0,1.0,1.0) : vec4(0.0,0.0,0.15,1.0));\n"
+    "  gl_FragColor = ((v_normal.x+v_normal.y)/2.0)*c_darkblue+(1.0-(v_normal.x+v_normal.y)/2.0)*c_lightblue"
+//	"               + (( dot(normalize(gl_Position-u_sunpos),v_reflect) >= u_sunsize) ? c_white : c_darkblue)"
+//	"               +  c_white "
+	";\n"
 //    "  gl_FragColor = texture2D(u_texture, v_normal);\n"
     "  gl_FragColor.w = 1.0;\n"
     "}\n";

@@ -12,7 +12,7 @@ import android.opengl.GLUtils;
  
 import com.didlio.android.poolpaper.*;       
  
-                
+                       
 public class PoolpaperRenderer implements GLSurfaceView.Renderer {
                                
 	private PoolpaperService service;
@@ -55,7 +55,7 @@ public class PoolpaperRenderer implements GLSurfaceView.Renderer {
         Bitmap temp = BitmapFactory.decodeResource(context.getResources(), resource, opts);
         Bitmap bmp = Bitmap.createBitmap(temp, 0, 0, temp.getWidth(), temp.getHeight(), flip, true);
         temp.recycle();
-        
+                
         gl.glBindTexture(GL10.GL_TEXTURE_2D, id);    
         
         // Set all of our texture parameters:
