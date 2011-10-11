@@ -73,29 +73,30 @@ static const char gFragmentShader[] =
     "void main() {\n"
     "  vec2 splat;\n"
     "  vec3 toco = vec3 ( (v_refract.x>0.0) ? 0.5 : -0.5 , (v_refract.y>0.0) ? 0.5 : -0.5 , u_depth ) - v_position;\n" //1.0s are pool bounds
-	"  if (abs(v_refract.y/v_refract.x) > abs(toco.y/toco.x)) \n"
+	"  vec3 divi = toco/v_refract;\n"
+	"  if (abs(divi.x) > abs(divi.y)) \n"
 	"  {\n"
-	"     if (abs(v_refract.y/v_refract.z) > abs(toco.y/toco.z))\n"
+	"     if (abs(divi.z) > abs(divi.y))\n"
 	"     {\n"
-	"       splat = v_position.xz + (toco.y/v_refract.y)*v_refract.xz;\n"
+	"       splat = v_position.xz + (divi.y)*v_refract.xz;\n"
 //	"       gl_FragColor = vec4(1,0,0,1);"
 	"     }\n"
 	"     else\n"
 	"     {\n"
-	"       splat = v_position.xy + (toco.z/v_refract.z)*v_refract.xy;\n"
+	"       splat = v_position.xy + (divi.z)*v_refract.xy;\n"
 //	"       gl_FragColor = vec4(1,1,0,1);"
 	"     }\n"
 	"  }\n"
 	"  else\n"
 	"  {\n"
-	"     if (abs(v_refract.x/v_refract.z) > abs(toco.x/toco.z))\n"
+	"     if (abs(divi.z) > abs(divi.x))\n"
 	"     {\n"
-	"       splat = v_position.yz + (toco.x/v_refract.x)*v_refract.yz;\n"
+	"       splat = v_position.yz + (divi.x)*v_refract.yz;\n"
 //	"       gl_FragColor = vec4(0,1,0,1);"
 	"     }\n"
 	"     else\n"
 	"     {\n"
-	"       splat = v_position.xy + (toco.z/v_refract.z)*v_refract.xy;\n"
+	"       splat = v_position.xy + (divi.z)*v_refract.xy;\n"
 //	"       gl_FragColor = vec4(1,1,0,1);"
 	"     }\n"
 	"  }\n"
@@ -104,7 +105,7 @@ static const char gFragmentShader[] =
 //		"                ((dot(u_sunpos,v_reflect) >= u_sunsize) ? 1.0 : 0.0)*c_white"
 //		"               +  texture2D(u_texture, 8.0*vec2(v_position.x+df*v_refract.x , v_position.y+df*v_refract.y))"
 	"                ( (dot(u_sunpos,v_reflect) >= u_sunsize) ? c_white : "
-	"                 texture2D(u_texture, 8.0*splat))"
+	"                 texture2D(u_texture, 8.0*splat+vec2(0.5,0.5)))"
 	";\n"
 //    "  gl_FragColor = texture2D(u_texture, v_normal);\n"
     "  gl_FragColor.w = 1.0;\n"
@@ -309,8 +310,8 @@ void init_vertices()
     }
 }
 
-GLfloat eye_long = 0.0;
-GLfloat eye_lat = 0;
+GLfloat eye_long = 3.14159/6.0;
+GLfloat eye_lat = 3.14159/6.0;
 GLfloat eye_dist = 1.5;
 Vec3 eye;
 Vec3 sun;
@@ -346,9 +347,9 @@ bool setupGraphics(int w, int h) {
     init_vertices();
 
 	update_eye_cartesian();
-    sun.x = -cos(eye_lat);
-    sun.y = 0.0;
-    sun.z = sin(eye_lat);
+    sun.x = -eye.x+1.5;
+    sun.y = -eye.y;
+    sun.z = eye.z;
 
     gProgram = createProgram(gVertexShader, gFragmentShader);
     if (!gProgram) {
@@ -373,7 +374,7 @@ bool setupGraphics(int w, int h) {
 
 void move_eye()
 {
-	//return;
+	return;
 	eye_long+=0.02f;
 	eye_lat+=0.002f;
 	update_eye_cartesian();
@@ -399,7 +400,7 @@ void renderFrame() {
     glUniform1i ( gvSamplerHandle, 0 );
     glUniform3f ( gvEyepos, eye.x, eye.y, eye.z ); checkGlError("set Eyepos");
     glUniformMatrix4fv(	gvTrans, 1, false, matrix); checkGlError("set matrix");
-    glUniform1f ( gvSunsize, cos(5.0*2*3.14159/360.0) ); checkGlError("set Eyesize");
+    glUniform1f ( gvSunsize, cos(1.0*2*3.14159/360.0) ); checkGlError("set Eyesize");
     glUniform1f ( gvDepth, 0.5 ); checkGlError("set depth");
     glUniform3f ( gvSunpos, sun.x, sun.y, sun.z ); checkGlError("set Eyepos");
 

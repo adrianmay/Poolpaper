@@ -8,7 +8,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory; 
 import android.graphics.Matrix;    
 import android.opengl.GLSurfaceView;     
-import android.opengl.GLUtils;                
+import android.opengl.GLUtils;                        
  
 import com.didlio.android.poolpaper.*;        
  
