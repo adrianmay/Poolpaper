@@ -1,18 +1,18 @@
 package com.didlio.android.poolpaper;
       
-import javax.microedition.khronos.egl.EGLConfig;
-import javax.microedition.khronos.opengles.GL10;
+import javax.microedition.khronos.egl.EGLConfig;              
+import javax.microedition.khronos.opengles.GL10; 
      
 import android.content.Context;  
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory; 
 import android.graphics.Matrix;    
 import android.opengl.GLSurfaceView;     
-import android.opengl.GLUtils;
+import android.opengl.GLUtils;                
  
-import com.didlio.android.poolpaper.*;       
+import com.didlio.android.poolpaper.*;        
  
-                       
+                                                   
 public class PoolpaperRenderer implements GLSurfaceView.Renderer {
                                
 	private PoolpaperService service;
@@ -25,11 +25,11 @@ public class PoolpaperRenderer implements GLSurfaceView.Renderer {
         C.init(width, height);   
     }                  
 
-    public void onSurfaceCreated(GL10 gl, EGLConfig config) {             
+    public void onSurfaceCreated(GL10 gl, EGLConfig config) {                  
         C.bitmap(loadTexture(gl, service, R.drawable.beige_tiles));         
     }  
 	     
- // Get a new texture id:
+ // Get a new texture id: 
     private static int newTextureID(GL10 gl) {
         int[] temp = new int[1];
         gl.glGenTextures(1, temp, 0);
@@ -49,12 +49,13 @@ public class PoolpaperRenderer implements GLSurfaceView.Renderer {
         // This will tell the BitmapFactory to not scale based on the device's pixel density:
         // (Thanks to Matthew Marshall for this bit)
         BitmapFactory.Options opts = new BitmapFactory.Options();
-        opts.inScaled = false;   
+        opts.inScaled = false;    
+                  
         
         // Load up, and flip the texture:
         Bitmap temp = BitmapFactory.decodeResource(context.getResources(), resource, opts);
         Bitmap bmp = Bitmap.createBitmap(temp, 0, 0, temp.getWidth(), temp.getHeight(), flip, true);
-        temp.recycle();  
+        temp.recycle();     
                                                             
         gl.glBindTexture(GL10.GL_TEXTURE_2D, id);    
         
@@ -81,7 +82,7 @@ public class PoolpaperRenderer implements GLSurfaceView.Renderer {
             bmp.recycle();
             bmp = bmp2;
         }
-        
+             
         bmp.recycle();
         
         return id;

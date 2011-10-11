@@ -1,13 +1,21 @@
 
 /*
  * TODO:
- * ~ Simple square
- * Image on square
- * Perspective
- * Waves
- *
+ * Walls
+ * Fog
+ * Memory mapping
+ * Fresnel (ambient above)
+ * Caustics
+ * Settings
+ * Fetch ad
+ * Shallow end
+ * Surroundings, more interesting reflections
+ * Fish?
+ * Manual plop, speedboat
+ * Manual fly/zoom
  *
  */
+
 #include "header.h"
 int bitmap_id;
 GLfloat width, height;
@@ -39,12 +47,15 @@ static const char gVertexShader[] =
     "  v_normal.z = c_one;\n"
     "  v_normal = normalize(v_normal);\n"
     "  v_reflect = normalize(a_position - u_eyepos);\n"
-	"  v_reflect = reflect(v_reflect, v_normal);\n"
 	"  v_refract = refract(v_reflect, -v_normal, 0.75);\n"
+	"  v_reflect = reflect(v_reflect, v_normal);\n"
 	"  v_position = a_position;\n"
     "  gl_Position = vec4(a_position.x, a_position.y, a_position.z, 1.0);\n"
     "  gl_Position = u_trans * gl_Position;\n"
     "}\n";
+
+//    "			     0.2*((v_normal.x+v_normal.y)/2.0)*c_darkblue+0.2*(1.0-(v_normal.x+v_normal.y)/2.0)*c_lightblue"
+//	"               + (( dot(normalize(gl_Position-u_sunpos),v_reflect) >= u_sunsize) ? c_white : c_darkblue)"
 
 static const char gFragmentShader[] = 
     "precision mediump float;\n"
@@ -60,11 +71,40 @@ static const char gFragmentShader[] =
 	"varying vec3 v_refract;\n"
     "uniform sampler2D u_texture;\n"
     "void main() {\n"
+    "  vec2 splat;\n"
+    "  vec3 toco = vec3 ( (v_refract.x>0.0) ? 0.5 : -0.5 , (v_refract.y>0.0) ? 0.5 : -0.5 , u_depth ) - v_position;\n" //1.0s are pool bounds
+	"  if (abs(v_refract.y/v_refract.x) > abs(toco.y/toco.x)) \n"
+	"  {\n"
+	"     if (abs(v_refract.y/v_refract.z) > abs(toco.y/toco.z))\n"
+	"     {\n"
+	"       splat = v_position.xz + (toco.y/v_refract.y)*v_refract.xz;\n"
+//	"       gl_FragColor = vec4(1,0,0,1);"
+	"     }\n"
+	"     else\n"
+	"     {\n"
+	"       splat = v_position.xy + (toco.z/v_refract.z)*v_refract.xy;\n"
+//	"       gl_FragColor = vec4(1,1,0,1);"
+	"     }\n"
+	"  }\n"
+	"  else\n"
+	"  {\n"
+	"     if (abs(v_refract.x/v_refract.z) > abs(toco.x/toco.z))\n"
+	"     {\n"
+	"       splat = v_position.yz + (toco.x/v_refract.x)*v_refract.yz;\n"
+//	"       gl_FragColor = vec4(0,1,0,1);"
+	"     }\n"
+	"     else\n"
+	"     {\n"
+	"       splat = v_position.xy + (toco.z/v_refract.z)*v_refract.xy;\n"
+//	"       gl_FragColor = vec4(1,1,0,1);"
+	"     }\n"
+	"  }\n"
+//	"       splat = v_position.xy + (toco.z/v_refract.z)*v_refract.xy;\n"
     "  gl_FragColor = "
-//    "			     ((v_normal.x+v_normal.y)/2.0)*c_darkblue+(1.0-(v_normal.x+v_normal.y)/2.0)*c_lightblue"
-//	"               + (( dot(normalize(gl_Position-u_sunpos),v_reflect) >= u_sunsize) ? c_white : c_darkblue)"
-	"                 ((dot(normalize(u_sunpos),normalize(v_reflect)) >= u_sunsize) ? 1.0 : 0.0)*c_white"
-	"               +  texture2D(u_texture, 8.0*vec2(0.5+v_position.x+(u_depth/v_refract.z)*v_refract.x , 0.5+v_position.y+(u_depth/v_refract.z)*v_refract.y))"
+//		"                ((dot(u_sunpos,v_reflect) >= u_sunsize) ? 1.0 : 0.0)*c_white"
+//		"               +  texture2D(u_texture, 8.0*vec2(v_position.x+df*v_refract.x , v_position.y+df*v_refract.y))"
+	"                ( (dot(u_sunpos,v_reflect) >= u_sunsize) ? c_white : "
+	"                 texture2D(u_texture, 8.0*splat))"
 	";\n"
 //    "  gl_FragColor = texture2D(u_texture, v_normal);\n"
     "  gl_FragColor.w = 1.0;\n"
@@ -86,7 +126,7 @@ struct Vertex {
 	Vec2 norm;
 };
 
-const int VERTEX_GAPS=50.0f;
+const int VERTEX_GAPS=60.0f;
 const GLfloat VERTEX_PLANE_WIDTH = 1.0f;
 
 #define VERTEX_COUNT (VERTEX_GAPS+1)*(VERTEX_GAPS+1)
@@ -159,8 +199,8 @@ struct Matrix
 
 
 #define PLOP_RATE 1200
-#define PLOP_SIZE 0.0005
-#define PLOP_WIDTH 1.0
+#define PLOP_SIZE 0.004
+#define PLOP_WIDTH 0.7
 
 float dir=1.0;
 
@@ -202,7 +242,7 @@ void adjust_vertices()
 				   vertices[x+1][y].pos.z +
 				   vertices[x-1][y].pos.z
 			   ) / 4.0 - vertices[x][y].pos.z;
-		   velocities[x][y] += acc/1.5;
+		   velocities[x][y] += acc/2.0;
 		   //velocities[x][y] *= 0.999;
 	   }
    for (i=0;i<VERTEX_GAPS+1;i++)
@@ -247,8 +287,8 @@ void init_vertices()
            vertices[x][y].pos.x=((GLfloat)(x-VERTEX_GAPS/2))*VERTEX_PLANE_WIDTH/VERTEX_GAPS;
            vertices[x][y].pos.y=((GLfloat)(y-VERTEX_GAPS/2))*VERTEX_PLANE_WIDTH/VERTEX_GAPS;
            vertices[x][y].pos.z=0.0f;
-           vertices[x][y].norm.x=((GLfloat)x)/(VERTEX_GAPS);
-           vertices[x][y].norm.y=((GLfloat)y)/(VERTEX_GAPS);
+           vertices[x][y].norm.x=0;
+           vertices[x][y].norm.y=0;
            velocities[x][y]=0.0;
        }
    for (i=0;i<200;i++)
@@ -269,10 +309,30 @@ void init_vertices()
     }
 }
 
-GLfloat eye_long = 1.2;
-GLfloat eye_lat = 2.0;
+GLfloat eye_long = 0.0;
+GLfloat eye_lat = 0;
 GLfloat eye_dist = 1.5;
 Vec3 eye;
+Vec3 sun;
+
+void update_eye_cartesian()
+{
+	eye.z = -eye_dist * sin(eye_lat);
+	GLfloat temp = eye_dist * cos(eye_lat);
+	eye.x = temp * sin(eye_long);
+	eye.y = -temp * cos(eye_long);
+	Matrix m_tot, m_rot_x, m_rot_z, m_pers, m_scale;
+	m_scale.stretch(4.0f, 4.0f*width/height, 1.0);
+	m_rot_z.rot_z(-eye_long);
+	m_rot_x.rot_x(3.14159/2.0-eye_lat);
+	m_pers.pers(eye_dist);
+	m_tot.premul(m_rot_z);
+	m_tot.premul(m_rot_x);
+	m_tot.premul(m_pers);
+	m_tot.premul(m_scale);
+	m_tot.transpose_out(matrix);
+	//velocities[(int)(VERTEX_GAPS/2 + eye.x/3.0*VERTEX_GAPS/VERTEX_PLANE_WIDTH)][(int)(VERTEX_GAPS/2 + eye.y/3.0*VERTEX_GAPS/VERTEX_PLANE_WIDTH)] +=0.1;
+}
 
 bool setupGraphics(int w, int h) {
 	width=w; height=h;
@@ -284,6 +344,11 @@ bool setupGraphics(int w, int h) {
     LOGI("setupGraphics(%d, %d)", w, h);
 
     init_vertices();
+
+	update_eye_cartesian();
+    sun.x = -cos(eye_lat);
+    sun.y = 0.0;
+    sun.z = sin(eye_lat);
 
     gProgram = createProgram(gVertexShader, gFragmentShader);
     if (!gProgram) {
@@ -306,32 +371,18 @@ bool setupGraphics(int w, int h) {
     return true;
 }
 
-void update_eye_cartesian()
+void move_eye()
 {
-	eye.z = eye_dist * sin(eye_lat);
-	GLfloat temp = eye_dist * cos(eye_lat);
-	eye.x = temp * sin(eye_long);
-	eye.y = -temp * cos(eye_long);
-//	vertices[(int)(VERTEX_GAPS/2 + eye.x/3.0*VERTEX_GAPS/VERTEX_PLANE_WIDTH)][(int)(VERTEX_GAPS/2 + eye.y/3.0*VERTEX_GAPS/VERTEX_PLANE_WIDTH)].pos.z+=0.03;
+	//return;
+	eye_long+=0.02f;
+	eye_lat+=0.002f;
+	update_eye_cartesian();
 }
 
 void renderFrame() {
-	//eye_long+=0.02f;
-	update_eye_cartesian();
 	adjust_vertices();
-	Matrix m_tot, m_rot_x, m_rot_z, m_pers, m_scale;
-	m_scale.stretch(4.0f, 4.0f*width/height, 1.0);
-	m_rot_z.rot_z(-eye_long);
-	m_rot_x.rot_x(-eye_lat);
-	m_pers.pers(eye_dist);
-	m_tot.premul(m_rot_z);
-	m_tot.premul(m_rot_x);
-	m_tot.premul(m_pers);
-	m_tot.premul(m_scale);
-	m_tot.transpose_out(matrix);
+	move_eye();
 
-	static float time=0.0;
-    time -= 0.3;
     float grey = 0.5;
     glClearColor(grey, grey, grey, 1.0f); checkGlError("glClearColor");
     glClear( GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT); checkGlError("glClear");
@@ -349,8 +400,8 @@ void renderFrame() {
     glUniform3f ( gvEyepos, eye.x, eye.y, eye.z ); checkGlError("set Eyepos");
     glUniformMatrix4fv(	gvTrans, 1, false, matrix); checkGlError("set matrix");
     glUniform1f ( gvSunsize, cos(5.0*2*3.14159/360.0) ); checkGlError("set Eyesize");
-    glUniform1f ( gvDepth, 0.2 ); checkGlError("set depth");
-    glUniform3f ( gvSunpos, -eye_dist*cos(eye_lat), 0.0, eye_dist*sin(eye_lat) ); checkGlError("set Eyepos");
+    glUniform1f ( gvDepth, 0.5 ); checkGlError("set depth");
+    glUniform3f ( gvSunpos, sun.x, sun.y, sun.z ); checkGlError("set Eyepos");
 
     //glDrawArrays(GL_TRIANGLES, 0, 3);
     glDrawElements(GL_TRIANGLE_STRIP, INDEX_COUNT, GL_UNSIGNED_SHORT, indices); checkGlError("glDrawElements");
