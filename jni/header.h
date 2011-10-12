@@ -12,6 +12,7 @@
 #define  LOGI(...)  __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
 #define  LOGE(...)  __android_log_print(ANDROID_LOG_ERROR,LOG_TAG,__VA_ARGS__)
 
+#define GL_TEXTURE_WRAP_R 0x8072
 bool setupGraphics(int w, int h);
 void renderFrame();
 void bitmap(int id);

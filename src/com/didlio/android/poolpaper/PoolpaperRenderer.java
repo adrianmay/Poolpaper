@@ -27,18 +27,18 @@ public class PoolpaperRenderer implements GLSurfaceView.Renderer {
 
     public void onSurfaceChanged(GL10 gl, int width, int height) {
         C.init(width, height);   
-    }                        
+    }                             
         
     public void onSurfaceCreated(GL10 gl, EGLConfig config) {   
-        C.bitmap(loadTexture(gl, service, R.drawable.didlio));
-/*        C.bitmap(loadCubeTexture(gl, service, new int [] {
-        		R.drawable.didlio,
-        		R.drawable.didlio,
-        		R.drawable.didlio,
-        		R.drawable.didlio,
-        		R.drawable.didlio,
-        		R.drawable.didlio    
-        		}));*/               
+//        C.bitmap(loadTexture(gl, service, R.drawable.didlio));
+        C.bitmap(loadCubeTexture(gl, service, new int [] {
+        		R.drawable.bot,
+        		R.drawable.fro,
+        		R.drawable.rig,
+        		R.drawable.bac,
+        		R.drawable.lef,
+        		R.drawable.top    
+        		}));                
     }   
   	      
  // Get a new texture id:   
@@ -87,8 +87,9 @@ public class PoolpaperRenderer implements GLSurfaceView.Renderer {
         // Set all of our texture parameters:
         gl.glTexParameterf(GL11ExtensionPack.GL_TEXTURE_CUBE_MAP, GL10.GL_TEXTURE_MIN_FILTER, GL10.GL_LINEAR_MIPMAP_NEAREST);
         gl.glTexParameterf(GL11ExtensionPack.GL_TEXTURE_CUBE_MAP, GL10.GL_TEXTURE_MAG_FILTER, GL10.GL_NEAREST);              
-        gl.glTexParameterf(GL11ExtensionPack.GL_TEXTURE_CUBE_MAP, GL10.GL_TEXTURE_WRAP_S, GL10.GL_REPEAT);
-        gl.glTexParameterf(GL11ExtensionPack.GL_TEXTURE_CUBE_MAP, GL10.GL_TEXTURE_WRAP_T, GL10.GL_REPEAT);
+        gl.glTexParameterf(GL11ExtensionPack.GL_TEXTURE_CUBE_MAP, GL10.GL_TEXTURE_WRAP_S, GL10.GL_CLAMP_TO_EDGE);
+        gl.glTexParameterf(GL11ExtensionPack.GL_TEXTURE_CUBE_MAP, GL10.GL_TEXTURE_WRAP_T, GL10.GL_CLAMP_TO_EDGE);
+        
 
         // In which ID will we be storing this texture?
         int id = newTextureID(gl);       
@@ -120,7 +121,7 @@ public class PoolpaperRenderer implements GLSurfaceView.Renderer {
         }
            
         return id;
-    }
+    }  
 
     private void mipMap(GL10 gl, Bitmap bmp, int role)
     {
@@ -138,8 +139,8 @@ public class PoolpaperRenderer implements GLSurfaceView.Renderer {
             if(height<1) height = 1;
             
             Bitmap bmp2 = Bitmap.createScaledBitmap(bmp, width, height, true);
-            //if (level>5)    
-            // bmp2.eraseColor(Color.RED);
+            if (level>2)    
+             bmp2.eraseColor(Color.WHITE);
             bmp.recycle();
             bmp = bmp2;
         }             

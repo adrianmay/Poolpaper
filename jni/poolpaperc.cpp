@@ -37,7 +37,7 @@ GLuint gvDepth;
 		"const vec4 c_lightblue = vec4(0.5,0.5,0.8,1.0);\n" \
 		"const vec4 c_white = vec4(1.0,1.0,1.0,1.0);\n" \
 		"const vec4 c_transparent = vec4(0.0,0.0,0.0,0.0);\n" \
-	    "uniform sampler2D u_texture;\n" \
+	    "uniform samplerCube u_texture;\n" \
 	    "uniform mat4 u_trans;\n" \
 	    "uniform vec3 u_eyepos;\n" \
 	    "uniform float u_depth;\n" \
@@ -48,7 +48,7 @@ GLuint gvDepth;
 		"invariant varying vec3 v_reflect;\n" \
 		"invariant varying vec3 v_refract;\n" \
 		"invariant varying vec3 v_divi;\n" \
-	    "invariant varying vec2 v_splat;\n" \
+	    "invariant varying vec3 v_splat;\n" \
 	    "invariant varying vec4 v_colour;\n"
 
 static const char gVertexShader[] = 
@@ -61,7 +61,7 @@ static const char gVertexShader[] =
     "  v_normal.z = c_one;\n"
     "  v_normal = normalize(v_normal);\n"
     "  v_reflect = normalize(a_position - u_eyepos);\n"
-	"  v_refract = refract(v_reflect, -v_normal, 1.0);\n" //0.75
+	"  v_refract = refract(v_reflect, -v_normal, 0.75);\n" //0.75
 	"  v_reflect = reflect(v_reflect, -v_normal);\n"
 	"  v_position = a_position;\n"
 	"  float signx = (v_refract.x>0.0) ? 1.0 : -1.0;"
@@ -73,14 +73,14 @@ static const char gVertexShader[] =
 	"     if (-v_divi.z > v_divi.y)\n"
 	"     {\n"
 	"       vec2 temp = vec2(signy, -1.0)*( v_position.xz + (v_divi.y)*v_refract.xz );\n"
-	"       temp =  temp*1.0+0.5;"
-	"       v_splat = temp;"//vec3(temp.x, toco.y, temp.y);
+//	"       temp =  temp*1.0+0.5;"
+	"       v_splat = vec3(temp.x, signy*0.5, signy*temp.y);"
 	"     }\n"
 	"     else\n"
 	"     {\n"
 	"       vec2 temp = vec2(v_position.xy - (v_divi.z)*v_refract.xy);\n"
-	"       temp =  temp*1.0+0.5;"
-	"       v_splat = temp;"//vec3(temp.x, -temp.y, toco.z);
+//	"       temp =  temp*1.0+0.5;"
+	"       v_splat = vec3(-temp.x, -temp.y, toco.z);"
 	"     }\n"
 	"  }\n"
 	"  else\n"
@@ -88,14 +88,14 @@ static const char gVertexShader[] =
 	"     if (-v_divi.z > v_divi.x)\n"
 	"     {\n"
 	"       vec2 temp = vec2(-signx, -1.0)*(v_position.yz + (v_divi.x)*v_refract.yz);\n"
-	"       temp =  temp*1.0+0.5;"
-	"       v_splat = temp;"//vec3(toco.x, temp.x, temp.y);
+//	"       temp =  temp*1.0+0.5;"
+	"       v_splat = vec3(0.5*signx, -temp.y, -signx*temp.x);"
 	"     }\n"
 	"     else\n"
 	"     {\n"
 	"       vec2 temp = vec2(v_position.xy - (v_divi.z)*v_refract.xy);\n"
-	"       temp =  temp*1.0+0.5;"
-	"       v_splat = temp;"//vec3(temp.x, -temp.y, toco.z);
+//	"       temp =  temp*1.0+0.5;"
+	"       v_splat = vec3(-temp.x, -temp.y, toco.z);"
 	"     }\n"
 	"  }\n"
     "  gl_Position = u_trans * vec4(a_position, 1.0);\n"
@@ -123,7 +123,7 @@ static const char gFragmentShader[] =
 //	"                 v_colour + ("
 //	"				    ( mod( (floor(v_splat.x)+floor(v_splat.y)) ,2.0)==0.0 ) ? c_darkblue : c_lightblue);"
 //	"                 vec4(v_splat.x, v_splat.y, 0.0, 1.0);"
-	"                 texture2D(u_texture, v_splat);"
+	"                 textureCube(u_texture, v_splat);"
 //    "  gl_FragColor.w = 1.0;\n"
     "}\n";
 
@@ -216,8 +216,7 @@ struct Matrix
 
 
 #define PLOP_RATE 1200
-#define PLOP_SIZE 0.0
-//01
+#define PLOP_SIZE 0.001
 #define PLOP_WIDTH 1.5
 
 float dir=1.0;
@@ -395,6 +394,7 @@ bool setupGraphics(int w, int h) {
     gvSunsize = glGetUniformLocation(gProgram, "u_sunsize"); checkGlError("glGetAttribLocation");
     gvDepth = glGetUniformLocation(gProgram, "u_depth"); checkGlError("glGetAttribLocation");
 
+    glTexParameterf(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
     glEnable(GL_DEPTH_TEST);
     glViewport(0, 0, w, h);
@@ -428,7 +428,7 @@ void renderFrame() {
     glVertexAttribPointer(gvNormal, 2, GL_FLOAT, GL_FALSE, 5*sizeof(GLfloat), (const void*)(3*sizeof(GLfloat))); checkGlError("glVertexAttribPointer");
 
     glActiveTexture(GL_TEXTURE0); checkGlError("glActiveTexture");
-    glBindTexture ( GL_TEXTURE_2D, bitmap_id ); checkGlError("glBindTexture ");
+    glBindTexture ( GL_TEXTURE_CUBE_MAP, bitmap_id ); checkGlError("glBindTexture ");
 
     glUniform1i ( gvSamplerHandle, 0 ); checkGlError("gvSamplerHandle");
     glUniform3f ( gvEyepos, eye.x, eye.y, eye.z ); checkGlError("set Eyepos");
