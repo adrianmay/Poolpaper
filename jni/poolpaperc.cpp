@@ -425,7 +425,8 @@ void renderFrame() {
     glVertexAttribPointer(gvNormal, 2, GL_FLOAT, GL_FALSE, 5*sizeof(GLfloat), (const void*)(3*sizeof(GLfloat))); checkGlError("glVertexAttribPointer");
 
     glActiveTexture(GL_TEXTURE0); checkGlError("glActiveTexture");
-    glBindTexture ( GL_TEXTURE_2D, bitmap_id ); checkGlError("glBindTexture ");
+    glBindTexture ( GL_TEXTURE_CUBE_MAP, bitmap_id ); checkGlError("glBindTexture ");
+
     glUniform1i ( gvSamplerHandle, 0 ); checkGlError("gvSamplerHandle");
     glUniform3f ( gvEyepos, eye.x, eye.y, eye.z ); checkGlError("set Eyepos");
     glUniformMatrix4fv(	gvTrans, 1, false, matrix); checkGlError("set matrix");

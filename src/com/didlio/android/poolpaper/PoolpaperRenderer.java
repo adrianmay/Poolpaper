@@ -67,10 +67,17 @@ public class PoolpaperRenderer implements GLSurfaceView.Renderer {
         gl.glTexParameterf(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_WRAP_S, GL10.GL_REPEAT);
         gl.glTexParameterf(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_WRAP_T, GL10.GL_REPEAT);
         
+        mipMap(gl, bmp, GL10.GL_TEXTURE_2D);
+        
+        return id;
+    }
+
+    private void mipMap(GL10 gl, Bitmap bmp, int role)
+    {
         // Generate, and load up all of the mipmaps:
         for(int level=0, height = bmp.getHeight(), width = bmp.getWidth(); true; level++) {
             // Push the bitmap onto the GPU:
-            GLUtils.texImage2D(GL10.GL_TEXTURE_2D, level, bmp, 0);
+            GLUtils.texImage2D(role, level, bmp, 0);
             
             // We need to stop when the texture is 1x1:   
             if(height==1 && width==1) break;
@@ -81,14 +88,11 @@ public class PoolpaperRenderer implements GLSurfaceView.Renderer {
             if(height<1) height = 1;
             
             Bitmap bmp2 = Bitmap.createScaledBitmap(bmp, width, height, true);
-            if (level>5)    
-             bmp2.eraseColor(Color.RED);
+            //if (level>5)    
+            // bmp2.eraseColor(Color.RED);
             bmp.recycle();
             bmp = bmp2;
-        }
-             
+        }             
         bmp.recycle();
-        
-        return id;
     }
 }
