@@ -37,7 +37,7 @@ GLuint gvDepth;
 		"const vec4 c_lightblue = vec4(0.5,0.5,0.8,1.0);\n" \
 		"const vec4 c_white = vec4(1.0,1.0,1.0,1.0);\n" \
 		"const vec4 c_transparent = vec4(0.0,0.0,0.0,0.0);\n" \
-	    "const vec4 u_fog = vec4(0.5, 0.75, 0.9, 1.0);\n" \
+	    "const vec4 c_fog = vec4(0.25, 0.5, 0.9, 1.0);\n" \
 	    "uniform samplerCube u_texture;\n" \
 	    "uniform mat4 u_trans;\n" \
 	    "uniform vec3 u_eyepos;\n" \
@@ -63,46 +63,52 @@ static const char gVertexShader[] =
     "  v_normal.z = c_one;\n"
     "  v_normal = normalize(v_normal);\n"
     "  v_reflect = normalize(a_position - u_eyepos);\n"
-	"  v_refract = refract(v_reflect, -v_normal, 0.75);\n" //0.75
+	"  v_refract = refract(v_reflect, v_normal, 0.75);\n" //0.75
 	"  v_reflect = reflect(v_reflect, -v_normal);\n"
 	"  v_position = a_position;\n"
+	"  float water;"
 	"  float signx = (v_refract.x>0.0) ? 1.0 : -1.0;"
 	"  float signy = (v_refract.y>0.0) ? 1.0 : -1.0;"
 	"  vec3 toco = vec3( signx*0.5 , signy*0.5 , -u_depth ) - a_position;"
 	"  v_divi = (toco)/v_refract;\n"
 	"  if (v_divi.x > v_divi.y) \n"
 	"  {\n" //front or back
-	"     if (-v_divi.z > v_divi.y)\n"
+	"     if (v_divi.z > v_divi.y)\n"
 	"     {\n"
-	"       vec2 temp = vec2(signy, -1.0)*( v_position.xz + (v_divi.y)*v_refract.xz );\n"
+	"       vec2 temp = ( v_position.xz + (v_divi.y)*v_refract.xz );\n"
 //	"       temp =  temp*1.0+0.5;"
-	"       v_splat = vec3(temp.x, signy*0.5, signy*temp.y);"
+	"       v_splat = vec3(temp.x, signy*0.5, temp.y);"
 	"     }\n"
 	"     else\n"
 	"     {\n"
-	"       vec2 temp = vec2(v_position.xy - (v_divi.z)*v_refract.xy);\n"
+	"       vec2 temp = vec2(v_position.xy + (v_divi.z)*v_refract.xy);\n"
 //	"       temp =  temp*1.0+0.5;"
-	"       v_splat = vec3(-temp.x, -temp.y, toco.z);"
+	"       v_splat = vec3(temp.x, temp.y, toco.z);"
 	"     }\n"
 	"  }\n"
 	"  else\n"
 	"  {\n" //sides
-	"     if (-v_divi.z > v_divi.x)\n"
+	"     if (v_divi.z > v_divi.x)\n"
 	"     {\n"
-	"       vec2 temp = vec2(-signx, -1.0)*(v_position.yz + (v_divi.x)*v_refract.yz);\n"
+	"       vec2 temp = (v_position.yz + (v_divi.x)*v_refract.yz);\n"
 //	"       temp =  temp*1.0+0.5;"
-	"       v_splat = vec3(0.5*signx, -temp.y, -signx*temp.x);"
+	"       v_splat = vec3(0.5*signx, temp.x, temp.y);"
 	"     }\n"
 	"     else\n"
 	"     {\n"
-	"       vec2 temp = vec2(v_position.xy - (v_divi.z)*v_refract.xy);\n"
+	"       vec2 temp = vec2(v_position.xy + (v_divi.z)*v_refract.xy);\n"
 //	"       temp =  temp*1.0+0.5;"
-	"       v_splat = vec3(-temp.x, -temp.y, toco.z);"
+	"       v_splat = vec3(temp.x, temp.y, toco.z);"
 	"     }\n"
-	"     v_fog = pow(u_fog, length(v_splat-v_position));"
 	"  }\n"
+	"  water = length(v_splat - a_position);"
+	"  v_fog = pow(c_fog, vec4(water, water, water, 1.0));"
     "  gl_Position = u_trans * vec4(a_position, 1.0);\n"
 	"  v_shine = (dot(u_sunpos,v_reflect) >= u_sunsize) ? c_white : c_transparent;\n"
+	"  water = v_splat.y;"
+	"  v_splat.y = -v_splat.z;"
+	"  v_splat.z = water;"
+
 //	"  vec2 texcoord = mod(floor(v_splat * 10.0), 2.0);\n"
 //	"  float delta = abs(texcoord.x - texcoord.y);\n"
 //	"  v_colour = v_colour + mix(c_darkblue, c_lightblue, delta);\n"
@@ -146,7 +152,7 @@ struct Vertex {
 	Vec2 norm;
 };
 
-const int VERTEX_GAPS=150.0f;
+const int VERTEX_GAPS=150;
 const GLfloat VERTEX_PLANE_WIDTH = 1.0f;
 
 #define VERTEX_COUNT (VERTEX_GAPS+1)*(VERTEX_GAPS+1)
@@ -219,8 +225,8 @@ struct Matrix
 
 
 #define PLOP_RATE 1200
-#define PLOP_SIZE 0.001
-#define PLOP_WIDTH 1.5
+#define PLOP_SIZE 0.0012
+#define PLOP_WIDTH 1.0
 
 float dir=1.0;
 
@@ -230,7 +236,7 @@ void plop()
 	if (rand()%PLOP_RATE)
 	{
 		dir *=-1.0;
-		GLfloat plop_width = PLOP_WIDTH*(rand()%1+1);
+		GLfloat plop_width = PLOP_WIDTH;//(rand()%1+1);
 		x = rand()%(VERTEX_GAPS+1);
 		y = rand()%(VERTEX_GAPS+1);
 		int n = (int)(PLOP_WIDTH*5.0);
@@ -249,7 +255,7 @@ void plop()
 void adjust_vertices()
 {
    int x,y,i;
-   plop();
+   //plop();
    for (x=1;x<VERTEX_GAPS;x++)
 	   for (y=1;y<VERTEX_GAPS;y++)
 		   vertices[x][y].pos.z += velocities[x][y];
@@ -265,6 +271,7 @@ void adjust_vertices()
 		   velocities[x][y] += acc*2;
 		   //velocities[x][y] *= 0.999;
 	   }
+   /*
    for (i=0;i<VERTEX_GAPS+1;i++)
    {
 	   vertices[0][i].pos.z = vertices[1][i].pos.z;
@@ -277,6 +284,7 @@ void adjust_vertices()
 	   vertices[i][VERTEX_GAPS].pos.z = vertices[i][VERTEX_GAPS-1].pos.z;
 	   velocities[i][VERTEX_GAPS] = velocities[i][VERTEX_GAPS-1];
    }
+   */
    for (x=1;x<VERTEX_GAPS;x++)
 	   for (y=1;y<VERTEX_GAPS;y++)
 	   {
@@ -311,7 +319,7 @@ void init_vertices()
            vertices[x][y].norm.y=0;
            velocities[x][y]=0.0;
        }
-   for (i=0;i<200;i++)
+   for (i=0;i<50;i++)
 	   plop();
    i=0;
 
@@ -329,7 +337,7 @@ void init_vertices()
     }
 }
 
-GLfloat eye_long = 0.0;
+GLfloat eye_long = 145*3.14159/180.0;
 GLfloat eye_lat = 3.14159/10.0;
 GLfloat eye_dist = 1.5;
 Vec3 eye;
@@ -342,7 +350,7 @@ void update_eye_cartesian()
 	eye.x = temp * sin(eye_long);
 	eye.y = -temp * cos(eye_long);
 	Matrix m_tot, m_rot_x, m_rot_z, m_pers, m_scale;
-	m_scale.stretch(4.0f, 4.0f*width/height, 1.0);
+	m_scale.stretch(4.0f*height/width, 4.0f, 1.0);
 	m_rot_z.rot_z(-eye_long);
 	m_rot_x.rot_x(3.14159/2.0-eye_lat);
 	m_pers.pers(eye_dist);
@@ -401,14 +409,16 @@ bool setupGraphics(int w, int h) {
 
     glEnable(GL_DEPTH_TEST);
     glViewport(0, 0, w, h);
+//    glDepthRangef(-20.0, 20.0);
+
     checkGlError("glViewport");
     return true;
 }
 
 void move_eye()
 {
-//	return;
-	eye_long+=0.007*3.0;
+	return;
+	eye_long-=0.007*3.0;
 //	eye_lat+=0.002f;
 	update_eye_cartesian();
 }

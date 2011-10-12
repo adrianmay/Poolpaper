@@ -12,9 +12,9 @@ import android.graphics.Color;
 import android.graphics.BitmapFactory; 
 import android.graphics.Matrix;    
 import android.opengl.GLSurfaceView;      
-import android.opengl.GLUtils;                        
+import android.opengl.GLUtils;                           
  
-import com.didlio.android.poolpaper.*;        
+import com.didlio.android.poolpaper.*;   
  
                                                    
 public class PoolpaperRenderer implements GLSurfaceView.Renderer {
@@ -24,7 +24,7 @@ public class PoolpaperRenderer implements GLSurfaceView.Renderer {
     public void onDrawFrame(GL10 gl) {                    
         C.step();          
     }                                
-
+      
     public void onSurfaceChanged(GL10 gl, int width, int height) {
         C.init(width, height);   
     }                             
@@ -32,13 +32,13 @@ public class PoolpaperRenderer implements GLSurfaceView.Renderer {
     public void onSurfaceCreated(GL10 gl, EGLConfig config) {   
 //        C.bitmap(loadTexture(gl, service, R.drawable.didlio));
         C.bitmap(loadCubeTexture(gl, service, new int [] {
-        		R.drawable.bot,
-        		R.drawable.fro,
-        		R.drawable.rig,
-        		R.drawable.bac,
-        		R.drawable.lef,
-        		R.drawable.top    
-        		}));                
+        		R.drawable.chess,
+        		R.drawable.chess,
+        		R.drawable.chess,
+        		R.drawable.chess,
+        		R.drawable.chess,
+        		R.drawable.chess
+        		}));                 
     }   
   	      
  // Get a new texture id:   
@@ -76,7 +76,8 @@ public class PoolpaperRenderer implements GLSurfaceView.Renderer {
                                                             
         gl.glBindTexture(GL10.GL_TEXTURE_2D, id);    
                                                                             
-        mipMap(gl, bmp, GL10.GL_TEXTURE_2D);
+        mipMap(gl, bmp, GL10.GL_TEXTURE_2D); 
+            
         
         return id;
     }
@@ -85,8 +86,8 @@ public class PoolpaperRenderer implements GLSurfaceView.Renderer {
     private int loadCubeTexture(GL10 gl, Context context, int [] resources) {
                
         // Set all of our texture parameters:
-        gl.glTexParameterf(GL11ExtensionPack.GL_TEXTURE_CUBE_MAP, GL10.GL_TEXTURE_MIN_FILTER, GL10.GL_LINEAR_MIPMAP_NEAREST);
-        gl.glTexParameterf(GL11ExtensionPack.GL_TEXTURE_CUBE_MAP, GL10.GL_TEXTURE_MAG_FILTER, GL10.GL_NEAREST);              
+        gl.glTexParameterf(GL11ExtensionPack.GL_TEXTURE_CUBE_MAP, GL10.GL_TEXTURE_MIN_FILTER, GL10.GL_LINEAR_MIPMAP_LINEAR);
+        gl.glTexParameterf(GL11ExtensionPack.GL_TEXTURE_CUBE_MAP, GL10.GL_TEXTURE_MAG_FILTER, GL10.GL_LINEAR);              
         gl.glTexParameterf(GL11ExtensionPack.GL_TEXTURE_CUBE_MAP, GL10.GL_TEXTURE_WRAP_S, GL10.GL_CLAMP_TO_EDGE);
         gl.glTexParameterf(GL11ExtensionPack.GL_TEXTURE_CUBE_MAP, GL10.GL_TEXTURE_WRAP_T, GL10.GL_CLAMP_TO_EDGE);
         
@@ -94,7 +95,7 @@ public class PoolpaperRenderer implements GLSurfaceView.Renderer {
         // In which ID will we be storing this texture?
         int id = newTextureID(gl);       
         
-        // We need to flip the textures vertically:
+        // We need to flip the textures vertically:  
         Matrix flip = new Matrix();
         flip.postScale(1f, -1f);
          
@@ -103,12 +104,12 @@ public class PoolpaperRenderer implements GLSurfaceView.Renderer {
         BitmapFactory.Options opts = new BitmapFactory.Options();
         opts.inScaled = false;    
         int [] roles = new int [] { 
-        		GL11ExtensionPack.GL_TEXTURE_CUBE_MAP_NEGATIVE_Z,
-        		GL11ExtensionPack.GL_TEXTURE_CUBE_MAP_POSITIVE_Y,
-        		GL11ExtensionPack.GL_TEXTURE_CUBE_MAP_POSITIVE_X,
-        		GL11ExtensionPack.GL_TEXTURE_CUBE_MAP_NEGATIVE_Y,
-        		GL11ExtensionPack.GL_TEXTURE_CUBE_MAP_NEGATIVE_X,
-        		GL11ExtensionPack.GL_TEXTURE_CUBE_MAP_POSITIVE_Z
+        		GL11ExtensionPack.GL_TEXTURE_CUBE_MAP_POSITIVE_Y, //bottom    
+        		GL11ExtensionPack.GL_TEXTURE_CUBE_MAP_POSITIVE_Z, //front
+        		GL11ExtensionPack.GL_TEXTURE_CUBE_MAP_POSITIVE_X, //right
+        		GL11ExtensionPack.GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, //back
+        		GL11ExtensionPack.GL_TEXTURE_CUBE_MAP_NEGATIVE_X, //left
+        		GL11ExtensionPack.GL_TEXTURE_CUBE_MAP_NEGATIVE_Y  //top
         		};
         
         for (int i = 0;i<6; i++)
@@ -120,9 +121,9 @@ public class PoolpaperRenderer implements GLSurfaceView.Renderer {
             mipMap(gl, bmp, roles[i]);  
         }
            
-        return id;
+        return id;            
     }  
-
+  
     private void mipMap(GL10 gl, Bitmap bmp, int role)
     {
         // Generate, and load up all of the mipmaps:
@@ -146,4 +147,4 @@ public class PoolpaperRenderer implements GLSurfaceView.Renderer {
         }             
         bmp.recycle();
     }
-}
+}        
