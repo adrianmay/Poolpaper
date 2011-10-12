@@ -21,7 +21,7 @@ int bitmap_id;
 GLfloat width, height;
 
 GLuint gProgram;
-GLuint gvPositionHandle;
+GLuint gvPosition;
 GLuint gvNormal;
 GLuint gvSamplerHandle;
 GLuint gvTrans;
@@ -356,7 +356,7 @@ bool setupGraphics(int w, int h) {
         LOGE("Could not create program.");
         return false;
     }
-    gvPositionHandle = glGetAttribLocation(gProgram, "a_position"); checkGlError("glGetAttribLocation");
+    gvPosition = glGetAttribLocation(gProgram, "a_position"); checkGlError("glGetAttribLocation");
     gvNormal = glGetAttribLocation(gProgram, "a_normal"); checkGlError("glGetAttribLocation");
     gvSamplerHandle = glGetUniformLocation(gProgram, "u_sampler"); checkGlError("glGetAttribLocation");
     gvTrans = glGetUniformLocation(gProgram, "u_trans"); checkGlError("glGetAttribLocation");
@@ -389,12 +389,31 @@ void renderFrame() {
     glClear( GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT); checkGlError("glClear");
 
     glUseProgram(gProgram); checkGlError("glUseProgram");
+/*
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
     glVertexAttribPointer(gvPositionHandle, 3, GL_FLOAT, GL_FALSE, 5*sizeof(GLfloat), vertices); checkGlError("glVertexAttribPointer");
     glEnableVertexAttribArray(gvPositionHandle); checkGlError("glEnableVertexAttribArray");
 
     glVertexAttribPointer(gvNormal, 2, GL_FLOAT, GL_FALSE, 5*sizeof(GLfloat), ((char*)vertices)+3*sizeof(GLfloat)); checkGlError("glVertexAttribPointer");
     glEnableVertexAttribArray(gvNormal); checkGlError("glEnableVertexAttribArray");
+*/
+//    glBindAttribLocation(gProgram, 0, "a_position");
+//    glBindAttribLocation(gProgram, 1, "a_normal");
+    GLuint vboIds[2];
+    glGenBuffers(2, vboIds);
+    glBindBuffer(GL_ARRAY_BUFFER, vboIds[0]);
+    glBufferData(GL_ARRAY_BUFFER, 5*sizeof(GLfloat)*VERTEX_COUNT, vertices, GL_DYNAMIC_DRAW);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vboIds[1]);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLushort) * INDEX_COUNT, indices, GL_DYNAMIC_DRAW);
+
+    glEnableVertexAttribArray(gvPosition);
+    glVertexAttribPointer(gvPosition, 3, GL_FLOAT, GL_FALSE, 5*sizeof(GLfloat), (const void*)0); checkGlError("glVertexAttribPointer");
+    glEnableVertexAttribArray(gvNormal);
+    glVertexAttribPointer(gvNormal, 2, GL_FLOAT, GL_FALSE, 5*sizeof(GLfloat), (const void*)(3*sizeof(GLfloat))); checkGlError("glVertexAttribPointer");
+
     glActiveTexture(GL_TEXTURE0);
     glBindTexture ( GL_TEXTURE_2D, bitmap_id );
     glUniform1i ( gvSamplerHandle, 0 );
@@ -404,8 +423,11 @@ void renderFrame() {
     glUniform1f ( gvDepth, 0.5 ); checkGlError("set depth");
     glUniform3f ( gvSunpos, sun.x, sun.y, sun.z ); checkGlError("set Eyepos");
 
+
     //glDrawArrays(GL_TRIANGLES, 0, 3);
-    glDrawElements(GL_TRIANGLE_STRIP, INDEX_COUNT, GL_UNSIGNED_SHORT, indices); checkGlError("glDrawElements");
+    glDrawElements(GL_TRIANGLE_STRIP, INDEX_COUNT, GL_UNSIGNED_SHORT, 0); checkGlError("glDrawElements");
+    glDeleteBuffers(2, vboIds);
+
 }
 
 void bitmap(int id) {bitmap_id=id;}
