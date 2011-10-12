@@ -61,35 +61,43 @@ static const char gVertexShader[] =
     "  v_normal.z = c_one;\n"
     "  v_normal = normalize(v_normal);\n"
     "  v_reflect = normalize(a_position - u_eyepos);\n"
-	"  v_refract = refract(v_reflect, -v_normal, 0.75);\n"
+	"  v_refract = refract(v_reflect, -v_normal, 1.0);\n" //0.75
 	"  v_reflect = reflect(v_reflect, -v_normal);\n"
 	"  v_position = a_position;\n"
 	"  float signx = (v_refract.x>0.0) ? 1.0 : -1.0;"
 	"  float signy = (v_refract.y>0.0) ? 1.0 : -1.0;"
-	"  v_divi = (vec3( signx*0.5 , signy*0.5 , u_depth ) - a_position)/v_refract;\n"
+	"  vec3 toco = vec3( signx*0.5 , signy*0.5 , -u_depth ) - a_position;"
+	"  v_divi = (toco)/v_refract;\n"
 	"  if (v_divi.x > v_divi.y) \n"
 	"  {\n" //front or back
-	"     if (v_divi.z > v_divi.y)\n"
+	"     if (-v_divi.z > v_divi.y)\n"
 	"     {\n"
-	"       v_splat = vec2(signy, -1.0)*( v_position.xz + (v_divi.y)*v_refract.xz );\n"
+	"       vec2 temp = vec2(signy, -1.0)*( v_position.xz + (v_divi.y)*v_refract.xz );\n"
+	"       temp =  temp*1.0+0.5;"
+	"       v_splat = temp;"//vec3(temp.x, toco.y, temp.y);
 	"     }\n"
 	"     else\n"
 	"     {\n"
-	"       v_splat = v_position.xy + (v_divi.z)*v_refract.xy;\n"
+	"       vec2 temp = vec2(v_position.xy - (v_divi.z)*v_refract.xy);\n"
+	"       temp =  temp*1.0+0.5;"
+	"       v_splat = temp;"//vec3(temp.x, -temp.y, toco.z);
 	"     }\n"
 	"  }\n"
 	"  else\n"
 	"  {\n" //sides
-	"     if (v_divi.z > v_divi.x)\n"
+	"     if (-v_divi.z > v_divi.x)\n"
 	"     {\n"
-	"       v_splat = vec2(-signx, -1.0)*(v_position.yz + (v_divi.x)*v_refract.yz);\n"
+	"       vec2 temp = vec2(-signx, -1.0)*(v_position.yz + (v_divi.x)*v_refract.yz);\n"
+	"       temp =  temp*1.0+0.5;"
+	"       v_splat = temp;"//vec3(toco.x, temp.x, temp.y);
 	"     }\n"
 	"     else\n"
 	"     {\n"
-	"       v_splat = v_position.xy + (v_divi.z)*v_refract.xy;\n"
+	"       vec2 temp = vec2(v_position.xy - (v_divi.z)*v_refract.xy);\n"
+	"       temp =  temp*1.0+0.5;"
+	"       v_splat = temp;"//vec3(temp.x, -temp.y, toco.z);
 	"     }\n"
 	"  }\n"
-	"  v_splat =  v_splat*10.0+0.5;"
     "  gl_Position = u_trans * vec4(a_position, 1.0);\n"
 	"  v_colour = (dot(u_sunpos,v_reflect) >= u_sunsize) ? c_white : c_transparent;\n"
 //	"  vec2 texcoord = mod(floor(v_splat * 10.0), 2.0);\n"
@@ -100,12 +108,6 @@ static const char gVertexShader[] =
 
 //    "			     0.2*((v_normal.x+v_normal.y)/2.0)*c_darkblue+0.2*(1.0-(v_normal.x+v_normal.y)/2.0)*c_lightblue"
 //	"               + (( dot(normalize(gl_Position-u_sunpos),v_reflect) >= u_sunsize) ? c_white : c_darkblue)"
-
-
-
-
-
-
 
 
 static const char gFragmentShader[] =
@@ -214,7 +216,8 @@ struct Matrix
 
 
 #define PLOP_RATE 1200
-#define PLOP_SIZE 0.001
+#define PLOP_SIZE 0.0
+//01
 #define PLOP_WIDTH 1.5
 
 float dir=1.0;
@@ -402,7 +405,7 @@ bool setupGraphics(int w, int h) {
 void move_eye()
 {
 //	return;
-	eye_long+=0.007f;
+	eye_long+=0.007*3.0;
 //	eye_lat+=0.002f;
 	update_eye_cartesian();
 }
@@ -425,13 +428,13 @@ void renderFrame() {
     glVertexAttribPointer(gvNormal, 2, GL_FLOAT, GL_FALSE, 5*sizeof(GLfloat), (const void*)(3*sizeof(GLfloat))); checkGlError("glVertexAttribPointer");
 
     glActiveTexture(GL_TEXTURE0); checkGlError("glActiveTexture");
-    glBindTexture ( GL_TEXTURE_CUBE_MAP, bitmap_id ); checkGlError("glBindTexture ");
+    glBindTexture ( GL_TEXTURE_2D, bitmap_id ); checkGlError("glBindTexture ");
 
     glUniform1i ( gvSamplerHandle, 0 ); checkGlError("gvSamplerHandle");
     glUniform3f ( gvEyepos, eye.x, eye.y, eye.z ); checkGlError("set Eyepos");
     glUniformMatrix4fv(	gvTrans, 1, false, matrix); checkGlError("set matrix");
     glUniform1f ( gvSunsize, cos(2.0*2*3.14159/360.0) ); checkGlError("set Eyesize");
-    glUniform1f ( gvDepth, 0.6 ); checkGlError("set depth");
+    glUniform1f ( gvDepth, 0.5 ); checkGlError("set depth");
     glUniform3f ( gvSunpos, sun.x, sun.y, sun.z ); checkGlError("set Eyepos");
 
     glEnable(GL_DEPTH_TEST); checkGlError("enable depth");

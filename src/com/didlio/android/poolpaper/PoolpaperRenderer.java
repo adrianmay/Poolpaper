@@ -2,13 +2,16 @@ package com.didlio.android.poolpaper;
       
 import javax.microedition.khronos.egl.EGLConfig;              
 import javax.microedition.khronos.opengles.GL10; 
+import javax.microedition.khronos.opengles.GL11;
+import javax.microedition.khronos.opengles.GL11Ext;
+import javax.microedition.khronos.opengles.GL11ExtensionPack;
      
 import android.content.Context;  
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.BitmapFactory; 
 import android.graphics.Matrix;    
-import android.opengl.GLSurfaceView;     
+import android.opengl.GLSurfaceView;      
 import android.opengl.GLUtils;                        
  
 import com.didlio.android.poolpaper.*;        
@@ -26,10 +29,18 @@ public class PoolpaperRenderer implements GLSurfaceView.Renderer {
         C.init(width, height);   
     }                        
         
-    public void onSurfaceCreated(GL10 gl, EGLConfig config) {                                                                  
-        C.bitmap(loadTexture(gl, service, R.drawable.beige_tiles));               
+    public void onSurfaceCreated(GL10 gl, EGLConfig config) {   
+        C.bitmap(loadTexture(gl, service, R.drawable.didlio));
+/*        C.bitmap(loadCubeTexture(gl, service, new int [] {
+        		R.drawable.didlio,
+        		R.drawable.didlio,
+        		R.drawable.didlio,
+        		R.drawable.didlio,
+        		R.drawable.didlio,
+        		R.drawable.didlio    
+        		}));*/               
     }   
-	      
+  	      
  // Get a new texture id:   
     private static int newTextureID(GL10 gl) {  
         int[] temp = new int[1];
@@ -39,7 +50,13 @@ public class PoolpaperRenderer implements GLSurfaceView.Renderer {
 
     // Will load a texture out of a drawable resource file, and return an OpenGL texture ID:
     private int loadTexture(GL10 gl, Context context, int resource) {
-        
+               
+        // Set all of our texture parameters:
+        gl.glTexParameterf(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_MIN_FILTER, GL10.GL_LINEAR_MIPMAP_NEAREST);
+        gl.glTexParameterf(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_MAG_FILTER, GL10.GL_NEAREST);              
+        gl.glTexParameterf(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_WRAP_S, GL10.GL_REPEAT);
+        gl.glTexParameterf(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_WRAP_T, GL10.GL_REPEAT);
+
         // In which ID will we be storing this texture?
         int id = newTextureID(gl);       
         
@@ -52,23 +69,56 @@ public class PoolpaperRenderer implements GLSurfaceView.Renderer {
         BitmapFactory.Options opts = new BitmapFactory.Options();
         opts.inScaled = false;    
                        
-        
         // Load up, and flip the texture:
         Bitmap temp = BitmapFactory.decodeResource(context.getResources(), resource, opts);
         Bitmap bmp = Bitmap.createBitmap(temp, 0, 0, temp.getWidth(), temp.getHeight(), flip, true);
         temp.recycle();     
                                                             
         gl.glBindTexture(GL10.GL_TEXTURE_2D, id);    
-                                                                    
-                         
-        // Set all of our texture parameters:
-        gl.glTexParameterf(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_MIN_FILTER, GL10.GL_LINEAR_MIPMAP_NEAREST);
-        gl.glTexParameterf(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_MAG_FILTER, GL10.GL_NEAREST);              
-        gl.glTexParameterf(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_WRAP_S, GL10.GL_REPEAT);
-        gl.glTexParameterf(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_WRAP_T, GL10.GL_REPEAT);
-        
+                                                                            
         mipMap(gl, bmp, GL10.GL_TEXTURE_2D);
         
+        return id;
+    }
+
+    // Will load a texture out of a drawable resource file, and return an OpenGL texture ID:
+    private int loadCubeTexture(GL10 gl, Context context, int [] resources) {
+               
+        // Set all of our texture parameters:
+        gl.glTexParameterf(GL11ExtensionPack.GL_TEXTURE_CUBE_MAP, GL10.GL_TEXTURE_MIN_FILTER, GL10.GL_LINEAR_MIPMAP_NEAREST);
+        gl.glTexParameterf(GL11ExtensionPack.GL_TEXTURE_CUBE_MAP, GL10.GL_TEXTURE_MAG_FILTER, GL10.GL_NEAREST);              
+        gl.glTexParameterf(GL11ExtensionPack.GL_TEXTURE_CUBE_MAP, GL10.GL_TEXTURE_WRAP_S, GL10.GL_REPEAT);
+        gl.glTexParameterf(GL11ExtensionPack.GL_TEXTURE_CUBE_MAP, GL10.GL_TEXTURE_WRAP_T, GL10.GL_REPEAT);
+
+        // In which ID will we be storing this texture?
+        int id = newTextureID(gl);       
+        
+        // We need to flip the textures vertically:
+        Matrix flip = new Matrix();
+        flip.postScale(1f, -1f);
+         
+        // This will tell the BitmapFactory to not scale based on the device's pixel density:
+        // (Thanks to Matthew Marshall for this bit)
+        BitmapFactory.Options opts = new BitmapFactory.Options();
+        opts.inScaled = false;    
+        int [] roles = new int [] { 
+        		GL11ExtensionPack.GL_TEXTURE_CUBE_MAP_NEGATIVE_Z,
+        		GL11ExtensionPack.GL_TEXTURE_CUBE_MAP_POSITIVE_Y,
+        		GL11ExtensionPack.GL_TEXTURE_CUBE_MAP_POSITIVE_X,
+        		GL11ExtensionPack.GL_TEXTURE_CUBE_MAP_NEGATIVE_Y,
+        		GL11ExtensionPack.GL_TEXTURE_CUBE_MAP_NEGATIVE_X,
+        		GL11ExtensionPack.GL_TEXTURE_CUBE_MAP_POSITIVE_Z
+        		};
+        
+        for (int i = 0;i<6; i++)
+        {    
+            Bitmap temp = BitmapFactory.decodeResource(context.getResources(), resources[i], opts);
+            Bitmap bmp = Bitmap.createBitmap(temp, 0, 0, temp.getWidth(), temp.getHeight(), flip, true);
+            temp.recycle();     
+            gl.glBindTexture(GL11ExtensionPack.GL_TEXTURE_CUBE_MAP, id);                                              
+            mipMap(gl, bmp, roles[i]);  
+        }
+           
         return id;
     }
 
