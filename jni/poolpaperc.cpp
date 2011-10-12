@@ -37,6 +37,7 @@ GLuint gvDepth;
 		"const vec4 c_lightblue = vec4(0.5,0.5,0.8,1.0);\n" \
 		"const vec4 c_white = vec4(1.0,1.0,1.0,1.0);\n" \
 		"const vec4 c_transparent = vec4(0.0,0.0,0.0,0.0);\n" \
+	    "const vec4 u_fog = vec4(0.5, 0.75, 0.9, 1.0);\n" \
 	    "uniform samplerCube u_texture;\n" \
 	    "uniform mat4 u_trans;\n" \
 	    "uniform vec3 u_eyepos;\n" \
@@ -49,7 +50,8 @@ GLuint gvDepth;
 		"invariant varying vec3 v_refract;\n" \
 		"invariant varying vec3 v_divi;\n" \
 	    "invariant varying vec3 v_splat;\n" \
-	    "invariant varying vec4 v_colour;\n"
+	    "invariant varying vec4 v_fog;\n" \
+	    "invariant varying vec4 v_shine;\n"
 
 static const char gVertexShader[] = 
 	"attribute vec3 a_position;\n"
@@ -97,9 +99,10 @@ static const char gVertexShader[] =
 //	"       temp =  temp*1.0+0.5;"
 	"       v_splat = vec3(-temp.x, -temp.y, toco.z);"
 	"     }\n"
+	"     v_fog = pow(u_fog, length(v_splat-v_position));"
 	"  }\n"
     "  gl_Position = u_trans * vec4(a_position, 1.0);\n"
-	"  v_colour = (dot(u_sunpos,v_reflect) >= u_sunsize) ? c_white : c_transparent;\n"
+	"  v_shine = (dot(u_sunpos,v_reflect) >= u_sunsize) ? c_white : c_transparent;\n"
 //	"  vec2 texcoord = mod(floor(v_splat * 10.0), 2.0);\n"
 //	"  float delta = abs(texcoord.x - texcoord.y);\n"
 //	"  v_colour = v_colour + mix(c_darkblue, c_lightblue, delta);\n"
@@ -116,14 +119,14 @@ static const char gFragmentShader[] =
     "void main() {\n"
 //	"  vec2 texcoord = mod(floor(v_splat * 10.0), 2.0);\n"
 //	"  float delta = abs(texcoord.x - texcoord.y);\n"
-	"  gl_FragColor = v_colour + "
+	"  gl_FragColor = v_shine + "
 //	"    mix(c_darkblue, c_lightblue, delta);\n"
 //    "  gl_FragColor = v_colour;"
 //	"                ( dot(u_sunpos,v_reflect) >= u_sunsize) ? c_white : "
 //	"                 v_colour + ("
 //	"				    ( mod( (floor(v_splat.x)+floor(v_splat.y)) ,2.0)==0.0 ) ? c_darkblue : c_lightblue);"
 //	"                 vec4(v_splat.x, v_splat.y, 0.0, 1.0);"
-	"                 textureCube(u_texture, v_splat);"
+	"                 textureCube(u_texture, v_splat)*v_fog;"
 //    "  gl_FragColor.w = 1.0;\n"
     "}\n";
 
