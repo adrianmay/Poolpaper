@@ -30,24 +30,31 @@ GLuint gvSunpos;
 GLuint gvSunsize;
 GLuint gvDepth;
 
+#define DECLS \
+	    "const float c_one = 1.0;\n" \
+	    "const float c_two = 2.0;\n" \
+		"const vec4 c_darkblue = vec4(0.2,0.2,0.5,1.0);\n" \
+		"const vec4 c_lightblue = vec4(0.5,0.5,0.8,1.0);\n" \
+		"const vec4 c_white = vec4(1.0,1.0,1.0,1.0);\n" \
+		"const vec4 c_transparent = vec4(0.0,0.0,0.0,0.0);\n" \
+	    "uniform sampler2D u_texture;\n" \
+	    "uniform mat4 u_trans;\n" \
+	    "uniform vec3 u_eyepos;\n" \
+	    "uniform float u_depth;\n" \
+	    "uniform vec3 u_sunpos;\n" \
+	    "uniform float u_sunsize;\n" \
+	    "invariant varying vec3 v_position;\n" \
+	    "invariant varying vec3 v_normal;\n" \
+		"invariant varying vec3 v_reflect;\n" \
+		"invariant varying vec3 v_refract;\n" \
+		"invariant varying vec3 v_divi;\n" \
+	    "invariant varying vec2 v_splat;\n" \
+	    "invariant varying vec4 v_colour;\n"
+
 static const char gVertexShader[] = 
-    "const float c_one = 1.0;\n"
-    "const float c_two = 2.0;\n"
-	"const vec4 c_white = vec4(1.0,1.0,1.0,1.0);\n"
-	"const vec4 c_transparent = vec4(0.0,0.0,0.0,0.0);\n"
-    "uniform mat4 u_trans;\n"
-    "uniform vec3 u_eyepos;\n"
-    "uniform float u_depth;\n"
-    "uniform vec3 u_sunpos;\n"
-    "uniform float u_sunsize;\n"
-    "attribute vec3 a_position;\n"
-    "attribute vec2 a_normal;\n"
-//    "varying vec3 v_position;\n"
-    "varying vec3 v_normal;\n"
-	"varying vec3 v_reflect;\n"
-	"varying vec3 v_refract;\n"
-    "varying vec2 v_splat;\n"
-    "varying vec4 v_shine;\n"
+	"attribute vec3 a_position;\n"
+	"attribute vec2 a_normal;\n"
+	DECLS
     "void main() {\n"
     "  v_normal.x = a_normal.x;\n"
     "  v_normal.y = a_normal.y;\n"
@@ -56,57 +63,66 @@ static const char gVertexShader[] =
     "  v_reflect = normalize(a_position - u_eyepos);\n"
 	"  v_refract = refract(v_reflect, -v_normal, 0.75);\n"
 	"  v_reflect = reflect(v_reflect, -v_normal);\n"
-//	"  v_position = a_position;\n"
-	"  vec3 v_divi = (vec3( (v_refract.x>0.0) ? 0.5 : -0.5 , (v_refract.y>0.0) ? 0.5 : -0.5 , u_depth ) - a_position)/v_refract;\n"
-    "  gl_Position = u_trans * vec4(a_position, 1.0);\n"
+	"  v_position = a_position;\n"
+	"  float signx = (v_refract.x>0.0) ? 1.0 : -1.0;"
+	"  float signy = (v_refract.y>0.0) ? 1.0 : -1.0;"
+	"  v_divi = (vec3( signx*0.5 , signy*0.5 , u_depth ) - a_position)/v_refract;\n"
 	"  if (v_divi.x > v_divi.y) \n"
-	"  {\n"
+	"  {\n" //front or back
 	"     if (v_divi.z > v_divi.y)\n"
 	"     {\n"
-	"       v_splat = a_position.xz + (v_divi.y)*v_refract.xz;\n"
+	"       v_splat = vec2(signy, -1.0)*( v_position.xz + (v_divi.y)*v_refract.xz );\n"
 	"     }\n"
 	"     else\n"
 	"     {\n"
-	"       v_splat = a_position.xy + (v_divi.z)*v_refract.xy;\n"
+	"       v_splat = v_position.xy + (v_divi.z)*v_refract.xy;\n"
 	"     }\n"
 	"  }\n"
 	"  else\n"
-	"  {\n"
+	"  {\n" //sides
 	"     if (v_divi.z > v_divi.x)\n"
 	"     {\n"
-	"       v_splat = a_position.yz + (v_divi.x)*v_refract.yz;\n"
+	"       v_splat = vec2(-signx, -1.0)*(v_position.yz + (v_divi.x)*v_refract.yz);\n"
 	"     }\n"
 	"     else\n"
 	"     {\n"
-	"       v_splat = a_position.xy + (v_divi.z)*v_refract.xy;\n"
+	"       v_splat = v_position.xy + (v_divi.z)*v_refract.xy;\n"
 	"     }\n"
-	"  };\n"
-	"  v_shine = (dot(u_sunpos,v_reflect) >= u_sunsize) ? c_white : c_transparent; "
+	"  }\n"
+	"  v_splat =  v_splat*10.0+0.5;"
+    "  gl_Position = u_trans * vec4(a_position, 1.0);\n"
+	"  v_colour = (dot(u_sunpos,v_reflect) >= u_sunsize) ? c_white : c_transparent;\n"
+//	"  vec2 texcoord = mod(floor(v_splat * 10.0), 2.0);\n"
+//	"  float delta = abs(texcoord.x - texcoord.y);\n"
+//	"  v_colour = v_colour + mix(c_darkblue, c_lightblue, delta);\n"
+//	"  texture2D(u_texture, (v_splat+0.25)*5.0); "
     "}\n";
 
 //    "			     0.2*((v_normal.x+v_normal.y)/2.0)*c_darkblue+0.2*(1.0-(v_normal.x+v_normal.y)/2.0)*c_lightblue"
 //	"               + (( dot(normalize(gl_Position-u_sunpos),v_reflect) >= u_sunsize) ? c_white : c_darkblue)"
 
+
+
+
+
+
+
+
 static const char gFragmentShader[] =
     "precision mediump float;\n"
-	"const vec4 c_darkblue = vec4(0.0,0.0,0.1,1.0);\n"
-	"const vec4 c_lightblue = vec4(0.4,0.4,0.6,1.0);\n"
-	"const vec4 c_white = vec4(1.0,1.0,1.0,1.0);\n"
-    "uniform vec3 u_sunpos;\n"
-    "uniform float u_sunsize;\n"
-    "uniform float u_depth;\n"
-//    "varying vec3 v_position;\n"
-    "varying vec3 v_normal;\n"
-	"varying vec3 v_reflect;\n"
-	"varying vec3 v_refract;\n"
-    "varying vec2 v_splat;\n"
-    "varying vec4 v_shine;\n"
-    "uniform sampler2D u_texture;\n"
+	DECLS
     "void main() {\n"
-    "  gl_FragColor = "
-//	"                ( (dot(u_sunpos,v_reflect) >= u_sunsize) ? c_white : "
-	"                 v_shine + texture2D(u_texture, 10.0*v_splat+vec2(0.5,0.5));"
-    "  gl_FragColor.w = 1.0;\n"
+//	"  vec2 texcoord = mod(floor(v_splat * 10.0), 2.0);\n"
+//	"  float delta = abs(texcoord.x - texcoord.y);\n"
+	"  gl_FragColor = v_colour + "
+//	"    mix(c_darkblue, c_lightblue, delta);\n"
+//    "  gl_FragColor = v_colour;"
+//	"                ( dot(u_sunpos,v_reflect) >= u_sunsize) ? c_white : "
+//	"                 v_colour + ("
+//	"				    ( mod( (floor(v_splat.x)+floor(v_splat.y)) ,2.0)==0.0 ) ? c_darkblue : c_lightblue);"
+//	"                 vec4(v_splat.x, v_splat.y, 0.0, 1.0);"
+	"                 texture2D(u_texture, v_splat);"
+//    "  gl_FragColor.w = 1.0;\n"
     "}\n";
 
 struct Vec2 {
@@ -198,7 +214,7 @@ struct Matrix
 
 
 #define PLOP_RATE 1200
-#define PLOP_SIZE 0.0012
+#define PLOP_SIZE 0.001
 #define PLOP_WIDTH 1.5
 
 float dir=1.0;
@@ -308,8 +324,8 @@ void init_vertices()
     }
 }
 
-GLfloat eye_long = 3.14159/6.0;
-GLfloat eye_lat = 3.14159/6.0;
+GLfloat eye_long = 0.0;
+GLfloat eye_lat = 3.14159/10.0;
 GLfloat eye_dist = 1.5;
 Vec3 eye;
 Vec3 sun;
@@ -385,8 +401,8 @@ bool setupGraphics(int w, int h) {
 
 void move_eye()
 {
-	return;
-	eye_long+=0.02f;
+//	return;
+	eye_long+=0.007f;
 //	eye_lat+=0.002f;
 	update_eye_cartesian();
 }
@@ -395,31 +411,32 @@ void renderFrame() {
 	adjust_vertices();
 	move_eye();
 
-    float grey = 0.5;
-    glClearColor(grey, grey, grey, 1.0f); checkGlError("glClearColor");
+    glClearColor(0.5, 0.5, 0.5, 1.0f); checkGlError("glClearColor");
     glClear( GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT); checkGlError("glClear");
 
     glUseProgram(gProgram); checkGlError("glUseProgram");
 
-    glBindBuffer(GL_ARRAY_BUFFER, vboIds[0]);
-    glBufferData(GL_ARRAY_BUFFER, 5*sizeof(GLfloat)*VERTEX_COUNT, vertices, GL_DYNAMIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, vboIds[0]); checkGlError("glBindBuffer GL_ARRAY_BUFFER");
+    glBufferData(GL_ARRAY_BUFFER, 5*sizeof(GLfloat)*VERTEX_COUNT, vertices, GL_DYNAMIC_DRAW); checkGlError("glBufferData GL_ARRAY_BUFFER");
 
-    glEnableVertexAttribArray(gvPosition);
+    glEnableVertexAttribArray(gvPosition); checkGlError("glEnableVertexAttribArray gvPosition");
     glVertexAttribPointer(gvPosition, 3, GL_FLOAT, GL_FALSE, 5*sizeof(GLfloat), (const void*)0); checkGlError("glVertexAttribPointer");
-    glEnableVertexAttribArray(gvNormal);
+    glEnableVertexAttribArray(gvNormal); checkGlError("glEnableVertexAttribArray gvNormal");
     glVertexAttribPointer(gvNormal, 2, GL_FLOAT, GL_FALSE, 5*sizeof(GLfloat), (const void*)(3*sizeof(GLfloat))); checkGlError("glVertexAttribPointer");
 
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture ( GL_TEXTURE_2D, bitmap_id );
-    glUniform1i ( gvSamplerHandle, 0 );
+    glActiveTexture(GL_TEXTURE0); checkGlError("glActiveTexture");
+    glBindTexture ( GL_TEXTURE_2D, bitmap_id ); checkGlError("glBindTexture ");
+    glUniform1i ( gvSamplerHandle, 0 ); checkGlError("gvSamplerHandle");
     glUniform3f ( gvEyepos, eye.x, eye.y, eye.z ); checkGlError("set Eyepos");
     glUniformMatrix4fv(	gvTrans, 1, false, matrix); checkGlError("set matrix");
     glUniform1f ( gvSunsize, cos(2.0*2*3.14159/360.0) ); checkGlError("set Eyesize");
     glUniform1f ( gvDepth, 0.6 ); checkGlError("set depth");
     glUniform3f ( gvSunpos, sun.x, sun.y, sun.z ); checkGlError("set Eyepos");
 
+    glEnable(GL_DEPTH_TEST); checkGlError("enable depth");
+
     glDrawElements(GL_TRIANGLE_STRIP, INDEX_COUNT, GL_UNSIGNED_SHORT, 0); checkGlError("glDrawElements");
-    glDeleteBuffers(2, vboIds);
+//    glDeleteBuffers(2, vboIds);
 }
 
 void bitmap(int id) {bitmap_id=id;}

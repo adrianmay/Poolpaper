@@ -5,6 +5,7 @@ import javax.microedition.khronos.opengles.GL10;
      
 import android.content.Context;  
 import android.graphics.Bitmap;
+import android.graphics.Color;
 import android.graphics.BitmapFactory; 
 import android.graphics.Matrix;    
 import android.opengl.GLSurfaceView;     
@@ -23,14 +24,14 @@ public class PoolpaperRenderer implements GLSurfaceView.Renderer {
 
     public void onSurfaceChanged(GL10 gl, int width, int height) {
         C.init(width, height);   
-    }                  
-
-    public void onSurfaceCreated(GL10 gl, EGLConfig config) {                  
-        C.bitmap(loadTexture(gl, service, R.drawable.beige_tiles));         
-    }  
-	     
- // Get a new texture id: 
-    private static int newTextureID(GL10 gl) {
+    }                        
+        
+    public void onSurfaceCreated(GL10 gl, EGLConfig config) {                                                                  
+        C.bitmap(loadTexture(gl, service, R.drawable.beige_tiles));               
+    }   
+	      
+ // Get a new texture id:   
+    private static int newTextureID(GL10 gl) {  
         int[] temp = new int[1];
         gl.glGenTextures(1, temp, 0);
         return temp[0];        
@@ -50,7 +51,7 @@ public class PoolpaperRenderer implements GLSurfaceView.Renderer {
         // (Thanks to Matthew Marshall for this bit)
         BitmapFactory.Options opts = new BitmapFactory.Options();
         opts.inScaled = false;    
-                  
+                       
         
         // Load up, and flip the texture:
         Bitmap temp = BitmapFactory.decodeResource(context.getResources(), resource, opts);
@@ -62,7 +63,7 @@ public class PoolpaperRenderer implements GLSurfaceView.Renderer {
                          
         // Set all of our texture parameters:
         gl.glTexParameterf(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_MIN_FILTER, GL10.GL_LINEAR_MIPMAP_NEAREST);
-        gl.glTexParameterf(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_MAG_FILTER, GL10.GL_LINEAR_MIPMAP_NEAREST);
+        gl.glTexParameterf(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_MAG_FILTER, GL10.GL_NEAREST);              
         gl.glTexParameterf(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_WRAP_S, GL10.GL_REPEAT);
         gl.glTexParameterf(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_WRAP_T, GL10.GL_REPEAT);
         
@@ -80,6 +81,8 @@ public class PoolpaperRenderer implements GLSurfaceView.Renderer {
             if(height<1) height = 1;
             
             Bitmap bmp2 = Bitmap.createScaledBitmap(bmp, width, height, true);
+            if (level>5)    
+             bmp2.eraseColor(Color.RED);
             bmp.recycle();
             bmp = bmp2;
         }
