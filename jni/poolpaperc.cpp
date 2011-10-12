@@ -35,12 +35,15 @@ static const char gVertexShader[] =
     "const float c_two = 2.0;\n"
     "uniform mat4 u_trans;\n"
     "uniform vec3 u_eyepos;\n"
+    "uniform float u_depth;\n"
     "attribute vec3 a_position;\n"
     "attribute vec2 a_normal;\n"
     "varying vec3 v_position;\n"
     "varying vec3 v_normal;\n"
 	"varying vec3 v_reflect;\n"
 	"varying vec3 v_refract;\n"
+//    "varying vec3 v_divi;\n"
+    "varying vec2 v_splat;\n"
     "void main() {\n"
     "  v_normal.x = a_normal.x;\n"
     "  v_normal.y = a_normal.y;\n"
@@ -50,14 +53,41 @@ static const char gVertexShader[] =
 	"  v_refract = refract(v_reflect, -v_normal, 0.75);\n"
 	"  v_reflect = reflect(v_reflect, v_normal);\n"
 	"  v_position = a_position;\n"
-    "  gl_Position = vec4(a_position.x, a_position.y, a_position.z, 1.0);\n"
-    "  gl_Position = u_trans * gl_Position;\n"
+	"  vec3 v_divi = (vec3( (v_refract.x>0.0) ? 0.5 : -0.5 , (v_refract.y>0.0) ? 0.5 : -0.5 , u_depth ) - v_position)/v_refract;\n"
+//    "  gl_Position = vec4(a_position.x, a_position.y, a_position.z, 1.0);\n"
+    "  gl_Position = u_trans * vec4(a_position, 1.0);\n"
+	"  if (v_divi.x > v_divi.y) \n"
+	"  {\n"
+	"     if (v_divi.z > v_divi.y)\n"
+	"     {\n"
+	"       v_splat = v_position.xz + (v_divi.y)*v_refract.xz;\n"
+//	"       gl_FragColor = vec4(1,0,0,1);"
+	"     }\n"
+	"     else\n"
+	"     {\n"
+	"       v_splat = v_position.xy + (v_divi.z)*v_refract.xy;\n"
+//	"       gl_FragColor = vec4(1,1,0,1);"
+	"     }\n"
+	"  }\n"
+	"  else\n"
+	"  {\n"
+	"     if (v_divi.z > v_divi.x)\n"
+	"     {\n"
+	"       v_splat = v_position.yz + (v_divi.x)*v_refract.yz;\n"
+//	"       gl_FragColor = vec4(0,1,0,1);"
+	"     }\n"
+	"     else\n"
+	"     {\n"
+	"       v_splat = v_position.xy + (v_divi.z)*v_refract.xy;\n"
+//	"       gl_FragColor = vec4(1,1,0,1);"
+	"     }\n"
+	"  };\n"
     "}\n";
 
 //    "			     0.2*((v_normal.x+v_normal.y)/2.0)*c_darkblue+0.2*(1.0-(v_normal.x+v_normal.y)/2.0)*c_lightblue"
 //	"               + (( dot(normalize(gl_Position-u_sunpos),v_reflect) >= u_sunsize) ? c_white : c_darkblue)"
 
-static const char gFragmentShader[] = 
+static const char gFragmentShader[] =
     "precision mediump float;\n"
 	"const vec4 c_darkblue = vec4(0.0,0.0,0.1,1.0);\n"
 	"const vec4 c_lightblue = vec4(0.4,0.4,0.6,1.0);\n"
@@ -69,43 +99,16 @@ static const char gFragmentShader[] =
     "varying vec3 v_normal;\n"
 	"varying vec3 v_reflect;\n"
 	"varying vec3 v_refract;\n"
+//    "varying vec3 v_divi;\n"
+    "varying vec2 v_splat;\n"
     "uniform sampler2D u_texture;\n"
     "void main() {\n"
-    "  vec2 splat;\n"
-    "  vec3 toco = vec3 ( (v_refract.x>0.0) ? 0.5 : -0.5 , (v_refract.y>0.0) ? 0.5 : -0.5 , u_depth ) - v_position;\n" //1.0s are pool bounds
-	"  vec3 divi = toco/v_refract;\n"
-	"  if (abs(divi.x) > abs(divi.y)) \n"
-	"  {\n"
-	"     if (abs(divi.z) > abs(divi.y))\n"
-	"     {\n"
-	"       splat = v_position.xz + (divi.y)*v_refract.xz;\n"
-//	"       gl_FragColor = vec4(1,0,0,1);"
-	"     }\n"
-	"     else\n"
-	"     {\n"
-	"       splat = v_position.xy + (divi.z)*v_refract.xy;\n"
-//	"       gl_FragColor = vec4(1,1,0,1);"
-	"     }\n"
-	"  }\n"
-	"  else\n"
-	"  {\n"
-	"     if (abs(divi.z) > abs(divi.x))\n"
-	"     {\n"
-	"       splat = v_position.yz + (divi.x)*v_refract.yz;\n"
-//	"       gl_FragColor = vec4(0,1,0,1);"
-	"     }\n"
-	"     else\n"
-	"     {\n"
-	"       splat = v_position.xy + (divi.z)*v_refract.xy;\n"
-//	"       gl_FragColor = vec4(1,1,0,1);"
-	"     }\n"
-	"  }\n"
 //	"       splat = v_position.xy + (toco.z/v_refract.z)*v_refract.xy;\n"
     "  gl_FragColor = "
 //		"                ((dot(u_sunpos,v_reflect) >= u_sunsize) ? 1.0 : 0.0)*c_white"
 //		"               +  texture2D(u_texture, 8.0*vec2(v_position.x+df*v_refract.x , v_position.y+df*v_refract.y))"
 	"                ( (dot(u_sunpos,v_reflect) >= u_sunsize) ? c_white : "
-	"                 texture2D(u_texture, 8.0*splat+vec2(0.5,0.5)))"
+	"                 texture2D(u_texture, 10.0*v_splat+vec2(0.5,0.5)))"
 	";\n"
 //    "  gl_FragColor = texture2D(u_texture, v_normal);\n"
     "  gl_FragColor.w = 1.0;\n"
@@ -127,7 +130,7 @@ struct Vertex {
 	Vec2 norm;
 };
 
-const int VERTEX_GAPS=60.0f;
+const int VERTEX_GAPS=100.0f;
 const GLfloat VERTEX_PLANE_WIDTH = 1.0f;
 
 #define VERTEX_COUNT (VERTEX_GAPS+1)*(VERTEX_GAPS+1)
@@ -200,8 +203,8 @@ struct Matrix
 
 
 #define PLOP_RATE 1200
-#define PLOP_SIZE 0.004
-#define PLOP_WIDTH 0.7
+#define PLOP_SIZE 0.001
+#define PLOP_WIDTH 0.9
 
 float dir=1.0;
 
@@ -211,7 +214,7 @@ void plop()
 	if (rand()%PLOP_RATE)
 	{
 		dir *=-1.0;
-		GLfloat plop_width = PLOP_WIDTH;//*(rand()%2+1);
+		GLfloat plop_width = PLOP_WIDTH*(rand()%1+1);
 		x = rand()%(VERTEX_GAPS+1);
 		y = rand()%(VERTEX_GAPS+1);
 		int n = (int)(PLOP_WIDTH*5.0);
@@ -243,7 +246,7 @@ void adjust_vertices()
 				   vertices[x+1][y].pos.z +
 				   vertices[x-1][y].pos.z
 			   ) / 4.0 - vertices[x][y].pos.z;
-		   velocities[x][y] += acc/2.0;
+		   velocities[x][y] += acc/1.0;
 		   //velocities[x][y] *= 0.999;
 	   }
    for (i=0;i<VERTEX_GAPS+1;i++)
@@ -385,7 +388,7 @@ void move_eye()
 {
 	return;
 	eye_long+=0.02f;
-	eye_lat+=0.002f;
+//	eye_lat+=0.002f;
 	update_eye_cartesian();
 }
 
@@ -413,7 +416,7 @@ void renderFrame() {
     glUniform3f ( gvEyepos, eye.x, eye.y, eye.z ); checkGlError("set Eyepos");
     glUniformMatrix4fv(	gvTrans, 1, false, matrix); checkGlError("set matrix");
     glUniform1f ( gvSunsize, cos(1.0*2*3.14159/360.0) ); checkGlError("set Eyesize");
-    glUniform1f ( gvDepth, 0.5 ); checkGlError("set depth");
+    glUniform1f ( gvDepth, 0.6 ); checkGlError("set depth");
     glUniform3f ( gvSunpos, sun.x, sun.y, sun.z ); checkGlError("set Eyepos");
 
     glDrawElements(GL_TRIANGLE_STRIP, INDEX_COUNT, GL_UNSIGNED_SHORT, 0); checkGlError("glDrawElements");

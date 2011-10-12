@@ -58,7 +58,7 @@ public class PoolpaperRenderer implements GLSurfaceView.Renderer {
         temp.recycle();     
                                                             
         gl.glBindTexture(GL10.GL_TEXTURE_2D, id);    
-                        
+                                                          
         // Set all of our texture parameters:
         gl.glTexParameterf(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_MIN_FILTER, GL10.GL_LINEAR_MIPMAP_NEAREST);
         gl.glTexParameterf(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_MAG_FILTER, GL10.GL_LINEAR_MIPMAP_NEAREST);
