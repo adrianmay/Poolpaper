@@ -36,6 +36,7 @@ GLuint gvDepth;
 		"const vec4 c_darkblue = vec4(0.2,0.2,0.5,1.0);\n" \
 		"const vec4 c_lightblue = vec4(0.5,0.5,0.8,1.0);\n" \
 		"const vec4 c_white = vec4(1.0,1.0,1.0,1.0);\n" \
+		"const vec4 c_ambient = vec4(1.0,0.75,0.5,1.0);\n" \
 		"const vec4 c_transparent = vec4(0.0,0.0,0.0,0.0);\n" \
 	    "const vec4 c_fog = vec4(0.25, 0.5, 0.9, 1.0);\n" \
 	    "uniform samplerCube u_texture;\n" \
@@ -57,6 +58,16 @@ static const char gVertexShader[] =
 	"attribute vec3 a_position;\n"
 	"attribute vec2 a_normal;\n"
 	DECLS
+	"  void fresnel(in vec3 incom, in vec3 normal, in float index_external, in float index_internal, out float reflectance, out float transmittance) "
+	"  {"
+	"    float eta = index_external/index_internal;"
+	"    float cos_theta1 = dot(incom, normal);"
+	"    float cos_theta2 = sqrt(1.0 - ((eta * eta) * ( 1.0 - (cos_theta1 * cos_theta1))));"
+	"    float fresnel_rs = (index_external * cos_theta1 - index_internal * cos_theta2 ) / (index_external * cos_theta1 + index_internal * cos_theta2);"
+	"    float fresnel_rp = (index_internal * cos_theta1 - index_external * cos_theta2 ) / (index_internal * cos_theta1 + index_external * cos_theta2);"
+	"    reflectance = (fresnel_rs * fresnel_rs + fresnel_rp * fresnel_rp) / 2.0;"
+	"    transmittance =((1.0-fresnel_rs) * (1.0-fresnel_rs) + (1.0-fresnel_rp) * (1.0-fresnel_rp)) / 2.0;"
+	"  }"
     "void main() {\n"
     "  v_normal.x = a_normal.x;\n"
     "  v_normal.y = a_normal.y;\n"
@@ -103,8 +114,12 @@ static const char gVertexShader[] =
 	"  }\n"
 	"  water = length(v_splat - a_position);"
 	"  v_fog = pow(c_fog, vec4(water, water, water, 1.0));"
+	"  float r, t;"
+	"  fresnel(-v_refract, v_normal, 1.33, 1.0, r, t);"
+	"  v_fog = v_fog * t;"
     "  gl_Position = u_trans * vec4(a_position, 1.0);\n"
-	"  v_shine = (dot(u_sunpos,v_reflect) >= u_sunsize) ? c_white : c_transparent;\n"
+	"  fresnel(-v_reflect, v_normal, 1.0, 1.33, r, t);"
+	"  v_shine = (dot(u_sunpos,v_reflect) >= u_sunsize) ? c_white : c_ambient*r;\n"
 	"  water = v_splat.y;"
 	"  v_splat.y = -v_splat.z;"
 	"  v_splat.z = water;"
@@ -338,8 +353,8 @@ void init_vertices()
 }
 
 GLfloat eye_long = 145*3.14159/180.0;
-GLfloat eye_lat = 3.14159/10.0;
-GLfloat eye_dist = 1.5;
+GLfloat eye_lat = 3.14159/14.0;
+GLfloat eye_dist = 1.0;
 Vec3 eye;
 Vec3 sun;
 
