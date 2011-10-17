@@ -3,6 +3,7 @@
 
 #include <GLES2/gl2.h>
 #include <GLES2/gl2ext.h>
+//#include <EGL/egl.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -23,4 +24,28 @@ GLuint createProgram(const char* pVertexSource, const char* pFragmentSource);
 void printGLString(const char *name, GLenum s);
 void checkGlError(const char* op);
 
+struct Vec2 {
+	GLfloat x;
+	GLfloat y;
+};
 
+struct Vec3 {
+	GLfloat x;
+	GLfloat y;
+	GLfloat z;
+};
+
+
+struct Matrix
+{
+	GLfloat e[4][4];
+	Matrix();
+	void transpose_out(GLfloat * to);
+	void rot(GLfloat angle, int x, int y);
+	void rot_z(GLfloat angle);
+	void rot_x(GLfloat angle);
+	void rot_y(GLfloat angle);
+	void pers(float dist);
+	void premul(Matrix & pre);
+	void stretch(GLfloat x, GLfloat y, GLfloat z);
+};

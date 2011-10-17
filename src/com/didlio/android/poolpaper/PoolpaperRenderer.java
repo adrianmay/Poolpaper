@@ -1,5 +1,5 @@
 package com.didlio.android.poolpaper;
-      
+       
 import javax.microedition.khronos.egl.EGLConfig;              
 import javax.microedition.khronos.opengles.GL10; 
 import javax.microedition.khronos.opengles.GL11;
@@ -15,28 +15,28 @@ import android.opengl.GLSurfaceView;
 import android.opengl.GLUtils;                           
  
 import com.didlio.android.poolpaper.*;   
- 
+                   
                                                    
 public class PoolpaperRenderer implements GLSurfaceView.Renderer {
                                
 	private PoolpaperService service;
 	public PoolpaperRenderer(PoolpaperService s) {service=s;}
     public void onDrawFrame(GL10 gl) {                    
-        C.step();          
+        C.step();            
     }                                
       
     public void onSurfaceChanged(GL10 gl, int width, int height) {
         C.init(width, height);   
-    }                             
+    }                                     
         
-    public void onSurfaceCreated(GL10 gl, EGLConfig config) {   
+    public void onSurfaceCreated(GL10 gl, EGLConfig config) {     
 //        C.bitmap(loadTexture(gl, service, R.drawable.didlio));
         C.bitmap(loadCubeTexture(gl, service, new int [] {
         		R.drawable.chess,
         		R.drawable.chess,
         		R.drawable.chess,
         		R.drawable.chess,
-        		R.drawable.chess,
+        		R.drawable.chess,               
         		R.drawable.chess
         		}));                 
     }   
@@ -46,7 +46,7 @@ public class PoolpaperRenderer implements GLSurfaceView.Renderer {
         int[] temp = new int[1];
         gl.glGenTextures(1, temp, 0);
         return temp[0];        
-    }
+    }     
 
     // Will load a texture out of a drawable resource file, and return an OpenGL texture ID:
     private int loadTexture(GL10 gl, Context context, int resource) {
@@ -62,7 +62,7 @@ public class PoolpaperRenderer implements GLSurfaceView.Renderer {
         
         // We need to flip the textures vertically:
         Matrix flip = new Matrix();
-        flip.postScale(1f, -1f);
+        flip.postScale(1f, -1f);               
          
         // This will tell the BitmapFactory to not scale based on the device's pixel density:
         // (Thanks to Matthew Marshall for this bit)
@@ -93,9 +93,9 @@ public class PoolpaperRenderer implements GLSurfaceView.Renderer {
         
 
         // In which ID will we be storing this texture?
-        int id = newTextureID(gl);       
+        int id = newTextureID(gl);                           
         
-        // We need to flip the textures vertically:  
+        // We need to flip the textures vertically:                                 
         Matrix flip = new Matrix();
         flip.postScale(1f, -1f);
          
