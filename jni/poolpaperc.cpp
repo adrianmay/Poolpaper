@@ -276,8 +276,8 @@ void renderFrame() {
     glUseProgram(gProgramCaustics); checkGlError("glUseProgram Caustics");
     glEnableVertexAttribArray(gvPositionCaustics); checkGlError("glEnableVertexAttribArray gvPositionCaustics");
     glVertexAttribPointer(gvPositionCaustics, 3, GL_FLOAT, GL_FALSE, 5*sizeof(GLfloat), (const void*)0); checkGlError("glVertexAttribPointer");
-//    glEnableVertexAttribArray(gvNormalCaustics); checkGlError("glEnableVertexAttribArray gvNormalCaustics");
-//    glVertexAttribPointer(gvNormalCaustics, 2, GL_FLOAT, GL_FALSE, 5*sizeof(GLfloat), (const void*)(3*sizeof(GLfloat))); checkGlError("glVertexAttribPointer");
+    glEnableVertexAttribArray(gvNormalCaustics); checkGlError("glEnableVertexAttribArray gvNormalCaustics");
+    glVertexAttribPointer(gvNormalCaustics, 2, GL_FLOAT, GL_FALSE, 5*sizeof(GLfloat), (const void*)(3*sizeof(GLfloat))); checkGlError("glVertexAttribPointer");
 
     //caustics pass
 
@@ -448,7 +448,7 @@ char gFragmentMain[] =
     "precision mediump float;"
 	DECLS_MAIN
     "void main() {"
-	"    gl_FragColor = v_shine + textureCube(u_texture, v_splat)/*texture2D(u_causture, vec2(v_splat.x, -v_splat.z))*/ *v_fog;"
+	"    gl_FragColor = v_shine + textureCube(u_texture, v_splat) /*texture2D(u_causture, vec2(v_splat.x, -v_splat.z))*/ *v_fog;"
 //	"    gl_FragColor = v_shine + textureCube(u_texture, v_splat)*testcol()*v_fog;"
     "}"
 
