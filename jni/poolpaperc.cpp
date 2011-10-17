@@ -35,15 +35,15 @@ struct Vertex {
 };
 
 #define PLOP_RATE 1200
-#define PLOP_SIZE 0.0012
+#define PLOP_SIZE 0.002
 #define PLOP_WIDTH 1.0
 
 const int VERTEX_GAPS=100;
 const GLfloat VERTEX_PLANE_WIDTH = 1.0f;
 
 GLfloat eye_long = 145*3.14159/180.0;
-GLfloat eye_lat = 3.14159/14.0;
-GLfloat eye_dist = 1.0;
+GLfloat eye_lat = 15.0*3.14159/180.0;
+GLfloat eye_dist = 0.5;
 //GLfloat eye_long = 0.0;
 //GLfloat eye_lat = 3.14159/2.0;
 //GLfloat eye_dist = 2.0;
@@ -61,7 +61,7 @@ GLfloat matrix[16];
 
 void update_eye_cartesian()
 {
-	eye.z = -eye_dist * sin(eye_lat);
+	eye.z = eye_dist * sin(eye_lat);
 	GLfloat temp = eye_dist * cos(eye_lat);
 	eye.x = temp * sin(eye_long);
 	eye.y = -temp * cos(eye_long);
@@ -80,8 +80,8 @@ void update_eye_cartesian()
 
 void move_eye()
 {
-	return;
-	eye_long-=0.007*3.0;
+//	return;
+	eye_long-=0.01;
 //	eye_lat+=0.002f;
 	update_eye_cartesian();
 }
@@ -161,7 +161,7 @@ void adjust_vertices()
 		   velocities[x][y] += acc*2;
 		   //velocities[x][y] *= 0.999;
 	   }
-   /*
+/*
    for (i=0;i<VERTEX_GAPS+1;i++)
    {
 	   vertices[0][i].pos.z = vertices[1][i].pos.z;
@@ -174,7 +174,7 @@ void adjust_vertices()
 	   vertices[i][VERTEX_GAPS].pos.z = vertices[i][VERTEX_GAPS-1].pos.z;
 	   velocities[i][VERTEX_GAPS] = velocities[i][VERTEX_GAPS-1];
    }
-   */
+*/
    for (x=1;x<VERTEX_GAPS;x++)
 	   for (y=1;y<VERTEX_GAPS;y++)
 	   {
@@ -295,18 +295,22 @@ void renderFrame() {
     glBufferData(GL_ARRAY_BUFFER, 5*sizeof(GLfloat)*VERTEX_COUNT, vertices, GL_DYNAMIC_DRAW); checkGlError("glBufferData GL_ARRAY_BUFFER");
 
     //caustics pass
+/*
     glUseProgram(gProgramCaustics); checkGlError("glUseProgram Caustics");
     glBindFramebuffer(GL_FRAMEBUFFER, gvFrameBuffer);
     glViewport(0, 0, 128, 128);
     glClearColor(0.0, 0.0, 0.0, 0.0); checkGlError("glClearColor");
     glClear(GL_COLOR_BUFFER_BIT); checkGlError("glClear");
-    glDrawElements(GL_TRIANGLE_STRIP, INDEX_COUNT, GL_UNSIGNED_SHORT, 0); checkGlError("glDrawElements");
-
+    glEnable(GL_BLEND);checkGlError("glEnable Blend");
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE);checkGlError("glBlendFunc");
+    glDrawArrays(GL_POINTS, 0, VERTEX_COUNT); checkGlError("glDrawArrays");
+    glDisable(GL_BLEND);
+*/
     //main pass
     glUseProgram(gProgramMain); checkGlError("glUseProgram");
     glUniform3f ( gvEyepos, eye.x, eye.y, eye.z ); checkGlError("set Eyepos");
     glUniformMatrix4fv(	gvTrans, 1, false, matrix); checkGlError("set matrix");
-    glUniform1f ( gvSunsize, cos(2.0*2*3.14159/360.0) ); checkGlError("set Eyesize");
+    glUniform1f ( gvSunsize, cos(4.0*2*3.14159/360.0) ); checkGlError("set Eyesize");
     glUniform1f ( gvDepth, 0.5 ); checkGlError("set depth");
     glUniform3f ( gvSunpos, sun.x, sun.y, sun.z ); checkGlError("set Eyepos");
     glActiveTexture(GL_TEXTURE0); checkGlError("glActiveTexture 0");
@@ -318,11 +322,12 @@ void renderFrame() {
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glViewport(0, 0, width, height);
-    glClearColor(0.5, 0.5, 0.5, 1.0f); checkGlError("glClearColor");
+    glClearColor(1.0,0.87,0.67,1.0); checkGlError("glClearColor");
     glClear( GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT); checkGlError("glClear");
     glDrawElements(GL_TRIANGLE_STRIP, INDEX_COUNT, GL_UNSIGNED_SHORT, 0); checkGlError("glDrawElements");
 
 }
+//"const vec4 c_ambient = vec4(1.5,1.0,0.5,1.0);" \
 
 
 #define DECLS_MAIN \
@@ -331,9 +336,13 @@ void renderFrame() {
 		"const vec4 c_darkblue = vec4(0.2,0.2,0.5,1.0);" \
 		"const vec4 c_lightblue = vec4(0.5,0.5,0.8,1.0);" \
 		"const vec4 c_white = vec4(1.0,1.0,1.0,1.0);" \
-		"const vec4 c_ambient = vec4(1.5,1.0,0.5,1.0);" \
+		"const vec4 c_black = vec4(0.0,0.0,0.0,0.0);" \
+		"const vec4 c_red = vec4(1.0,0.0,0.0,1.0);" \
+		"const vec4 c_green = vec4(0.0,1.0,0.0,1.0);" \
+		"const vec4 c_blue = vec4(0.0,0.0,1.0,1.0);" \
+		"const vec4 c_ambient = vec4(1.0,0.87,0.67,1.0);" \
 		"const vec4 c_transparent = vec4(0.0,0.0,0.0,0.0);" \
-		"const vec4 c_fog = vec4(0.25, 0.5, 0.9, 1.0);" \
+		"const vec4 c_fog = vec4(0.3, 0.06, 0.01, 0.0);" \
 	    "uniform bool u_phase;" \
 	    "uniform samplerCube u_texture;" \
 	    "uniform sampler2D u_causture;" \
@@ -386,38 +395,41 @@ char gVertexMain[] =
 	"  }"
 	"}"
 
-	"void fresnel(in vec3 incom, in vec3 normal, in float index_external, in float index_internal, out float reflectance, out float transmittance) "
+	"void fresnel(in vec3 incom, in vec3 normal, in float eta, out vec3 reflection, out vec3 refraction, out float reflectance, out float transmittance) "
 	"{"
-	"  float eta = index_external/index_internal;"
-	"  float cos_theta1 = dot(incom, normal);"
+	"  float cos_theta1 = dot(incom, -normal);"
 	"  float cos_theta2 = sqrt(1.0 - ((eta * eta) * ( 1.0 - (cos_theta1 * cos_theta1))));"
-	"  float fresnel_rs = (index_external * cos_theta1 - index_internal * cos_theta2 ) / (index_external * cos_theta1 + index_internal * cos_theta2);"
-	"  float fresnel_rp = (index_internal * cos_theta1 - index_external * cos_theta2 ) / (index_internal * cos_theta1 + index_external * cos_theta2);"
-	"  reflectance = (fresnel_rs * fresnel_rs + fresnel_rp * fresnel_rp) / 2.0;"
-	"  transmittance =((1.0-fresnel_rs) * (1.0-fresnel_rs) + (1.0-fresnel_rp) * (1.0-fresnel_rp)) / 2.0;"
+	"  reflection = incom + 2.0 * cos_theta1 * normal;"
+	"  refraction = (eta * incom) + (eta * cos_theta1 - cos_theta2) * normal;"
+	"  float fresnel_rs = (eta * cos_theta1 - cos_theta2 ) / (eta * cos_theta1 + cos_theta2);"
+	"  float fresnel_rp = (eta * cos_theta2 - cos_theta1 ) / (eta * cos_theta2 + cos_theta1);"
+	"  reflectance = (fresnel_rs*fresnel_rs + fresnel_rp*fresnel_rp)/2.0;"
+	"  transmittance = 1.0 - reflectance;"
 	"}"
 
     "void main() {"
+	"  float water, r, t;"
+	"  vec3 dummy;"
+    "  gl_Position = u_trans * vec4(a_position, 1.0);"
     "  v_normal.x = a_normal.x;"
     "  v_normal.y = a_normal.y;"
     "  v_normal.z = c_one;"
     "  v_normal = normalize(v_normal);"
-    "  v_reflect = normalize(a_position - u_eyepos);"
-	"  v_refract = refract(v_reflect, v_normal, 0.75);"
-	"  v_reflect = reflect(v_reflect, -v_normal);"
-	"  float water;"
-	"  water = length(v_splat - a_position);"
-	"  v_fog = pow(c_fog, vec4(water, water, water, 1.0));"
-	"  float r, t;"
-	"  fresnel(-v_refract, v_normal, 1.33, 1.0, r, t);"
-	"  v_fog = v_fog * t;"
-    "  gl_Position = u_trans * vec4(a_position, 1.0);"
-	"  fresnel(-v_reflect, v_normal, 1.0, 1.33, r, t);"
-	"  v_shine = (dot(u_sunpos,v_reflect) >= u_sunsize) ? c_white : c_ambient*r;"
+	"  fresnel(normalize(a_position - u_eyepos), v_normal, 0.75, v_reflect, v_refract, r, t);"
+	"  v_shine = (dot(u_sunpos,v_reflect) >= u_sunsize) ? c_white : c_ambient*r ;"
+//	"  v_shine = c_black;"
 	"  findsplat(a_position, v_refract, v_splat);"
-	"  water = v_splat.y;"
-	"  v_splat.y = -v_splat.z;"
-	"  v_splat.z = water;"
+	"  water = length(v_splat - a_position);"
+	"  v_fog = exp(-c_fog*water*3.0);"
+//	"  fresnel(normalize(-v_refract), -v_normal, 1.33, dummy, v_refract, r, t);"
+//	"  fresnel(-v_refract, v_normal, 1.33, 1.0, r, t);"
+	"  v_fog.w = 1.0; "
+	"  v_fog =  v_fog * t;"
+//	"  fresnel(-v_reflect, v_normal, 1.0, 1.33, r, t);"
+//	"  v_shine = c_black ;"
+//	"  water = v_splat.y;"
+//	"  v_splat.y = -v_splat.z;"
+//	"  v_splat.z = water;"
 //    "  v_position = a_position;"
     "}"
 	;
@@ -433,8 +445,22 @@ char gVertexMain[] =
 char gFragmentMain[] =
     "precision mediump float;"
 	DECLS_MAIN
+	"	float f(in float x, in float y) {"
+	"     float gx=24.0; "
+	"     float gy=48.0; "
+	"     return (x+0.5)*( (sin(gx*x+gy*y) + sin(gx*x-gy*y))>0.0 ? 1.0 : 0.0 );"
+	"   }"
     "void main() {"
-	"    gl_FragColor = v_shine + textureCube(u_texture, v_splat)*texture2D(u_causture, vec2(v_splat.x, -v_splat.z))*v_fog;"
+	"    gl_FragColor =  v_shine + textureCube(u_texture, v_splat)*v_fog;"//*texture2D(u_causture, vec2(v_splat.x, -v_splat.z));"
+//	"	gl_FragColor = vec4(v_splat.x+0.5, v_splat.y+0.5, v_splat.z+0.5, 1.0);"
+//	"	float xx = v_splat.x*v_splat.x;"
+/*	"	float yy = v_splat.y*v_splat.y;"
+	"	float zz = v_splat.z*v_splat.z;"
+	"	gl_FragColor = "
+	"       (xx>yy && xx>zz) ? (c_red*f(v_splat.y,v_splat.z)) : "
+	"	 	(yy>xx && yy>zz) ? (c_green*f(v_splat.x,v_splat.z)) : "
+	"	 	(zz>xx && zz>yy) ? (c_blue*f(v_splat.x,v_splat.y)) : c_black;"
+*/
 //	"    gl_FragColor = v_shine + textureCube(u_texture, v_splat)*testcol()*v_fog;"
     "}"
 
@@ -460,9 +486,9 @@ char gVertexCaustics[] =
 	DECLS_CAUSTICS
 
     "void main() {"
-    "  v_position = a_position - 0.5* vec3(a_normal, 0.0);"
+    "  v_position = a_position  - 0.5* vec3(a_normal, 0.0);"
     "  gl_Position = vec4(v_position, 1.0);"
-    "  gl_PointSize = 0.05;"
+    "  gl_PointSize = 0.5;"
     "}"
 	;
 
@@ -478,7 +504,7 @@ char gFragmentCaustics[] =
 //	"  return ( (cos(temp.x+temp.y) + cos(temp.x-temp.y))>0.0 ) ? vec4(0.0, 1.0, 0.0, 1.0) : vec4(1.0, 0.0, 0.0, 1.0);"
     "}"
     "void main() {"
-	"    gl_FragColor = vec4(0.2, 0.2, 0.2, 1.0);"//testcol();"
+	"    gl_FragColor = testcol();"
     "}"
 	;
 //	"  vec2 texcoord = mod(floor(v_splat * 10.0), 2.0);\n"
