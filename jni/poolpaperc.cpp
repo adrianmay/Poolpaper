@@ -295,7 +295,7 @@ void renderFrame() {
     glBufferData(GL_ARRAY_BUFFER, 5*sizeof(GLfloat)*VERTEX_COUNT, vertices, GL_DYNAMIC_DRAW); checkGlError("glBufferData GL_ARRAY_BUFFER");
 
     //caustics pass
-/*
+
     glUseProgram(gProgramCaustics); checkGlError("glUseProgram Caustics");
     glBindFramebuffer(GL_FRAMEBUFFER, gvFrameBuffer);
     glViewport(0, 0, 128, 128);
@@ -305,7 +305,7 @@ void renderFrame() {
     glBlendFunc(GL_SRC_ALPHA, GL_ONE);checkGlError("glBlendFunc");
     glDrawArrays(GL_POINTS, 0, VERTEX_COUNT); checkGlError("glDrawArrays");
     glDisable(GL_BLEND);
-*/
+
     //main pass
     glUseProgram(gProgramMain); checkGlError("glUseProgram");
     glUniform3f ( gvEyepos, eye.x, eye.y, eye.z ); checkGlError("set Eyepos");
@@ -451,7 +451,7 @@ char gFragmentMain[] =
 	"     return (x+0.5)*( (sin(gx*x+gy*y) + sin(gx*x-gy*y))>0.0 ? 1.0 : 0.0 );"
 	"   }"
     "void main() {"
-	"    gl_FragColor =  v_shine + textureCube(u_texture, v_splat)*v_fog;"//*texture2D(u_causture, vec2(v_splat.x, -v_splat.z));"
+	"    gl_FragColor =  v_shine + textureCube(u_texture, v_splat)*v_fog*texture2D(u_causture, vec2(v_splat.x, v_splat.y));"
 //	"	gl_FragColor = vec4(v_splat.x+0.5, v_splat.y+0.5, v_splat.z+0.5, 1.0);"
 //	"	float xx = v_splat.x*v_splat.x;"
 /*	"	float yy = v_splat.y*v_splat.y;"
@@ -486,7 +486,7 @@ char gVertexCaustics[] =
 	DECLS_CAUSTICS
 
     "void main() {"
-    "  v_position = a_position  - 0.5* vec3(a_normal, 0.0);"
+    "  v_position = a_position  - 0.0005* vec3(a_normal, 0.0);"
     "  gl_Position = vec4(v_position, 1.0);"
     "  gl_PointSize = 0.5;"
     "}"
@@ -504,7 +504,7 @@ char gFragmentCaustics[] =
 //	"  return ( (cos(temp.x+temp.y) + cos(temp.x-temp.y))>0.0 ) ? vec4(0.0, 1.0, 0.0, 1.0) : vec4(1.0, 0.0, 0.0, 1.0);"
     "}"
     "void main() {"
-	"    gl_FragColor = testcol();"
+	"    gl_FragColor = vec4(v_position.x, v_position.y, v_position.z, 1.0);"//testcol();"
     "}"
 	;
 //	"  vec2 texcoord = mod(floor(v_splat * 10.0), 2.0);\n"
