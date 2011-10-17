@@ -21,11 +21,11 @@ int bitmap_id;
 GLfloat width, height;
 void bitmap(int id) {bitmap_id=id;}
 
-GLuint gProgram, gCausticsProgram, gvPosition, gvNormal, gvSamplerHandle, gvTrans,
+GLuint gProgramMain, gProgramCaustics, gvPosition, gvNormal, gvSamplerHandle, gvTrans,
 	gvEyepos, gvSunpos, gvSunsize, gvDepth, gvPhase, gvCausticsTexture, gvCausture, gvFrameBuffer;
 
-extern char gVertexShader[];
-extern char gFragmentShader[];
+extern char gVertexMain[];
+extern char gFragmentMain[];
 extern char gVertexCaustics[];
 extern char gFragmentCaustics[];
 
@@ -232,8 +232,13 @@ bool setupGraphics(int w, int h) {
     sun.y/=sunmag;
     sun.z/=sunmag;
 
-    gProgram = createProgram(gVertexShader, gFragmentShader);
-    if (!gProgram) {
+    gProgramMain = createProgram(gVertexMain, gFragmentMain);
+    if (!gProgramMain) {
+        LOGE("Could not create program.");
+        return false;
+    }
+    gProgramCaustics = createProgram(gVertexCaustics, gFragmentCaustics);
+    if (!gProgramCaustics) {
         LOGE("Could not create program.");
         return false;
     }
@@ -262,7 +267,7 @@ void renderFrame() {
 	adjust_vertices();
 	move_eye();
 
-    glUseProgram(gProgram); checkGlError("glUseProgram");
+    glUseProgram(gProgramMain); checkGlError("glUseProgram");
 
     glUniform3f ( gvEyepos, eye.x, eye.y, eye.z ); checkGlError("set Eyepos");
     glUniformMatrix4fv(	gvTrans, 1, false, matrix); checkGlError("set matrix");
@@ -359,7 +364,7 @@ void renderFrame() {
 	    "invariant varying vec4 v_fog;" \
 	    "invariant varying vec4 v_shine;"
 
-char gVertexShader[] =
+char gVertexMain[] =
 	"attribute vec3 a_position;"
 	"attribute vec2 a_normal;"
 	DECLS
@@ -449,7 +454,7 @@ char gVertexShader[] =
 //	"               + (( dot(normalize(gl_Position-u_sunpos),v_reflect) >= u_sunsize) ? c_white : c_darkblue)"
 
 
-char gFragmentShader[] =
+char gFragmentMain[] =
     "precision mediump float;"
 	DECLS
     "vec4 testcol()"
@@ -482,4 +487,132 @@ char gFragmentShader[] =
 //	"				    ( mod( (floor(v_splat.x)+floor(v_splat.y)) ,2.0)==0.0 ) ? c_darkblue : c_lightblue);"
 //	"                 vec4(v_splat.x, v_splat.y, 0.0, 1.0);"
 //    "  gl_FragColor.w = 1.0;\n"
+
+
+
+
+char gVertexCaustics[] =
+	"attribute vec3 a_position;"
+	"attribute vec2 a_normal;"
+	DECLS
+
+	"void findsplat(in vec3 from, in vec3 to, out vec3 splat) "
+	"{"
+	"  float signx = (to.x>0.0) ? 1.0 : -1.0;"
+	"  float signy = (to.y>0.0) ? 1.0 : -1.0;"
+	"  vec3 tocorner = vec3( signx*0.5 , signy*0.5 , -u_depth ) - from;"
+	"  vec3 divi = tocorner/to;"
+	"  if (divi.x > divi.y)"
+	"  {" //front or back
+	"     if (divi.z > divi.y)"
+	"     {"
+	"       vec2 temp = ( from.xz + (divi.y)*to.xz );"
+	"       splat = vec3(temp.x, signy*0.5, temp.y);"
+	"     }"
+	"     else"
+	"     {"
+	"       splat = vec3(from.xy + (divi.z)*to.xy, -u_depth);"
+	"     }"
+	"  }"
+	"  else"
+	"  {" //sides
+	"     if (divi.z > divi.x)"
+	"     {"
+	"       splat = vec3(0.5*signx, (from.yz + (divi.x)*to.yz));"
+	"     }"
+	"     else"
+	"     {"
+	"       splat = vec3(from.xy + (divi.z)*to.xy, -u_depth);"
+	"     }"
+	"  }"
+	"}"
+
+	"void fresnel(in vec3 incom, in vec3 normal, in float index_external, in float index_internal, out float reflectance, out float transmittance) "
+	"{"
+	"  float eta = index_external/index_internal;"
+	"  float cos_theta1 = dot(incom, normal);"
+	"  float cos_theta2 = sqrt(1.0 - ((eta * eta) * ( 1.0 - (cos_theta1 * cos_theta1))));"
+	"  float fresnel_rs = (index_external * cos_theta1 - index_internal * cos_theta2 ) / (index_external * cos_theta1 + index_internal * cos_theta2);"
+	"  float fresnel_rp = (index_internal * cos_theta1 - index_external * cos_theta2 ) / (index_internal * cos_theta1 + index_external * cos_theta2);"
+	"  reflectance = (fresnel_rs * fresnel_rs + fresnel_rp * fresnel_rp) / 2.0;"
+	"  transmittance =((1.0-fresnel_rs) * (1.0-fresnel_rs) + (1.0-fresnel_rp) * (1.0-fresnel_rp)) / 2.0;"
+	"}"
+
+    "void mainpass() {"
+    "  v_normal.x = a_normal.x;"
+    "  v_normal.y = a_normal.y;"
+    "  v_normal.z = c_one;"
+    "  v_normal = normalize(v_normal);"
+    "  v_reflect = normalize(a_position - u_eyepos);"
+	"  v_refract = refract(v_reflect, v_normal, 0.75);"
+	"  v_reflect = reflect(v_reflect, -v_normal);"
+	"  float water;"
+	"  water = length(v_splat - a_position);"
+	"  v_fog = pow(c_fog, vec4(water, water, water, 1.0));"
+	"  float r, t;"
+	"  fresnel(-v_refract, v_normal, 1.33, 1.0, r, t);"
+	"  v_fog = v_fog * t;"
+    "  gl_Position = u_trans * vec4(a_position, 1.0);"
+	"  fresnel(-v_reflect, v_normal, 1.0, 1.33, r, t);"
+	"  v_shine = (dot(u_sunpos,v_reflect) >= u_sunsize) ? c_white : c_ambient*r;"
+	"  findsplat(a_position, v_refract, v_splat);"
+	"  water = v_splat.y;"
+	"  v_splat.y = -v_splat.z;"
+	"  v_splat.z = water;"
+    "  v_position = a_position;"
+    "}"
+
+    "void causticspass() {"
+    "  v_position = 10.0*a_position;"
+    "  gl_Position = vec4(v_position, 1.0);"
+    "}"
+
+    "void main() {"
+    "  if (u_phase) {causticspass();} else {mainpass();} "
+    "}"
+
+	;
+//	"  vec2 texcoord = mod(floor(v_splat * 10.0), 2.0);\n"
+//	"  float delta = abs(texcoord.x - texcoord.y);\n"
+//	"  v_colour = v_colour + mix(c_darkblue, c_lightblue, delta);\n"
+//	"  texture2D(u_texture, (v_splat+0.25)*5.0); "
+
+//    "			     0.2*((v_normal.x+v_normal.y)/2.0)*c_darkblue+0.2*(1.0-(v_normal.x+v_normal.y)/2.0)*c_lightblue"
+//	"               + (( dot(normalize(gl_Position-u_sunpos),v_reflect) >= u_sunsize) ? c_white : c_darkblue)"
+
+
+char gFragmentCaustics[] =
+    "precision mediump float;"
+	DECLS
+    "vec4 testcol()"
+    "{"
+    "  vec3 temp;"
+	"  temp = v_position*18.0;"
+//	"  return vec4(1.0, 1.0, 1.0, 1.0) * (0.5 + 0.25*(cos(temp.x+temp.y) + cos(temp.x-temp.y)) );"
+	"  return ( (cos(temp.x+temp.y) + cos(temp.x-temp.y))>0.0 ) ? vec4(0.0, 1.0, 0.0, 1.0) : vec4(1.0, 0.0, 0.0, 1.0);"
+    "}"
+    "void main() {"
+    "  if (u_phase) "
+    "  {"
+	"    gl_FragColor = testcol();"
+    "  } "
+    "  else "
+    "  {"
+
+	"    gl_FragColor = v_shine + textureCube(u_texture, v_splat)*texture2D(u_causture, vec2(v_splat.x, -v_splat.z))*v_fog;"
+//	"    gl_FragColor = v_shine + textureCube(u_texture, v_splat)*testcol()*v_fog;"
+    "  } "
+    "}"
+
+	;
+//	"  vec2 texcoord = mod(floor(v_splat * 10.0), 2.0);\n"
+//	"  float delta = abs(texcoord.x - texcoord.y);\n"
+//	"    mix(c_darkblue, c_lightblue, delta);\n"
+//    "  gl_FragColor = v_colour;"
+//	"                ( dot(u_sunpos,v_reflect) >= u_sunsize) ? c_white : "
+//	"                 v_colour + ("
+//	"				    ( mod( (floor(v_splat.x)+floor(v_splat.y)) ,2.0)==0.0 ) ? c_darkblue : c_lightblue);"
+//	"                 vec4(v_splat.x, v_splat.y, 0.0, 1.0);"
+//    "  gl_FragColor.w = 1.0;\n"
+
 
