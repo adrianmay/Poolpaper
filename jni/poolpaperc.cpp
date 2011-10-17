@@ -460,8 +460,9 @@ char gVertexCaustics[] =
 	DECLS_CAUSTICS
 
     "void main() {"
-    "  v_position = 10.0*a_position + vec3(0.0*a_normal,0.0);"
+    "  v_position = a_position - 0.5* vec3(a_normal, 0.0);"
     "  gl_Position = vec4(v_position, 1.0);"
+    "  gl_PointSize = 0.05;"
     "}"
 	;
 
@@ -477,7 +478,7 @@ char gFragmentCaustics[] =
 //	"  return ( (cos(temp.x+temp.y) + cos(temp.x-temp.y))>0.0 ) ? vec4(0.0, 1.0, 0.0, 1.0) : vec4(1.0, 0.0, 0.0, 1.0);"
     "}"
     "void main() {"
-	"    gl_FragColor = testcol();"
+	"    gl_FragColor = vec4(0.2, 0.2, 0.2, 1.0);"//testcol();"
     "}"
 	;
 //	"  vec2 texcoord = mod(floor(v_splat * 10.0), 2.0);\n"
