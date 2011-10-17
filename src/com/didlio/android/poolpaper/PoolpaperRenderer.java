@@ -34,7 +34,7 @@ public class PoolpaperRenderer implements GLSurfaceView.Renderer {
         C.bitmap(loadCubeTexture(gl, service, new int [] {
         		R.drawable.chess,
         		R.drawable.chess,
-        		R.drawable.chess,
+        		R.drawable.chess, 
         		R.drawable.chess,
         		R.drawable.chess,               
         		R.drawable.chess
