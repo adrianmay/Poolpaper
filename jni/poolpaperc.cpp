@@ -41,7 +41,7 @@ struct Vertex {
 
 const int VERTEX_GAPS=100;
 const GLfloat VERTEX_PLANE_WIDTH = 1.0f;
-const int CAUSTURE_RES=1024;
+const int CAUSTURE_RES=128;
 
 GLfloat eye_long = 145*3.14159/180.0;
 GLfloat eye_lat = 20.0*3.14159/180.0;
