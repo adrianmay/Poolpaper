@@ -1,8 +1,12 @@
 #include <jni.h>
 #include <android/log.h>
 
+#include<GLES/gl.h>
+
+//#include <GLES2/gl.h>
 #include <GLES2/gl2.h>
 #include <GLES2/gl2ext.h>
+#include <GLES2/gl2platform.h>
 //#include <EGL/egl.h>
 
 #include <stdio.h>

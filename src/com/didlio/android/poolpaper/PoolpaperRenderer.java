@@ -19,7 +19,7 @@ import com.didlio.android.poolpaper.*;
     
                                                                  
 public class PoolpaperRenderer implements GLSurfaceView.Renderer {
-                                                                      
+                                                                                                   
 	private PoolpaperService service;
 	public PoolpaperRenderer(PoolpaperService s) {service=s;}
     public void onDrawFrame(GL10 gl) {                    
@@ -33,13 +33,13 @@ public class PoolpaperRenderer implements GLSurfaceView.Renderer {
     public void onSurfaceCreated(GL10 gl, EGLConfig config) {     
 //        C.bitmap(loadTexture(gl, service, R.drawable.didlio));
         C.bitmap(loadCubeTexture(gl, service, new int [] {
-        		R.drawable.chess,
-        		R.drawable.chess,
-        		R.drawable.chess,                 
-        		R.drawable.chess,
-        		R.drawable.chess,               
-        		R.drawable.chess
-        		}));                 
+        		R.drawable.bot,
+        		R.drawable.fro,
+        		R.drawable.rig,                 
+        		R.drawable.bac,
+        		R.drawable.lef,               
+        		R.drawable.top
+        		}));                                          
     }   
   	      
  // Get a new texture id:   
