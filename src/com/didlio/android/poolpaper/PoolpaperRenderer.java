@@ -78,7 +78,7 @@ public class PoolpaperRenderer implements GLSurfaceView.Renderer {
                                                                             
         mipMap(gl, bmp, GL10.GL_TEXTURE_2D); 
              
-           
+             
         return id;
     }
 
@@ -106,7 +106,7 @@ public class PoolpaperRenderer implements GLSurfaceView.Renderer {
         int [] roles = new int [] { 
         		GL11ExtensionPack.GL_TEXTURE_CUBE_MAP_POSITIVE_Y, //bottom    
         		GL11ExtensionPack.GL_TEXTURE_CUBE_MAP_POSITIVE_Z, //front
-        		GL11ExtensionPack.GL_TEXTURE_CUBE_MAP_POSITIVE_X, //right
+        		GL11ExtensionPack.GL_TEXTURE_CUBE_MAP_POSITIVE_X, //right                 
         		GL11ExtensionPack.GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, //back
         		GL11ExtensionPack.GL_TEXTURE_CUBE_MAP_NEGATIVE_X, //left
         		GL11ExtensionPack.GL_TEXTURE_CUBE_MAP_NEGATIVE_Y  //top

@@ -38,7 +38,7 @@ struct Vertex {
 #define PLOP_SIZE 0.0012
 #define PLOP_WIDTH 1.0
 
-const int VERTEX_GAPS=150;
+const int VERTEX_GAPS=100;
 const GLfloat VERTEX_PLANE_WIDTH = 1.0f;
 
 GLfloat eye_long = 145*3.14159/180.0;
@@ -197,7 +197,7 @@ void adjust_vertices()
 
 GLuint vboIds[2];
 
-void getLocationsMain()
+void getLocations()
 {
     gvPositionMain = glGetAttribLocation(gProgramMain, "a_position"); checkGlError("glGetAttribLocation");
     gvNormalMain = glGetAttribLocation(gProgramMain, "a_normal"); checkGlError("glGetAttribLocation");
@@ -249,13 +249,31 @@ bool setupGraphics(int w, int h) {
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vboIds[1]);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLushort) * INDEX_COUNT, indices, GL_DYNAMIC_DRAW);
 
-    getLocationsMain();
+    getLocations();
 
     glTexParameterf(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
-//    eglCreatePbufferSurface();
+    glGenTextures(1, &gvCausticsTexture);
+    glGenFramebuffers(1, &gvFrameBuffer);
+    glActiveTexture(GL_TEXTURE0); checkGlError("glActiveTexture 1");
+    glBindTexture ( GL_TEXTURE_2D, gvCausticsTexture ); checkGlError("glBindTexture 1");
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 128, 128, 0, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, NULL);
+    glBindFramebuffer(GL_FRAMEBUFFER, gvFrameBuffer);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, gvCausticsTexture, 0);
+
+    glBindBuffer(GL_ARRAY_BUFFER, vboIds[0]); checkGlError("glBindBuffer GL_ARRAY_BUFFER");
+
+    glEnableVertexAttribArray(gvPositionMain); checkGlError("glEnableVertexAttribArray gvPositionMain");
+    glVertexAttribPointer(gvPositionMain, 3, GL_FLOAT, GL_FALSE, 5*sizeof(GLfloat), (const void*)0); checkGlError("glVertexAttribPointer");
+    glEnableVertexAttribArray(gvNormalMain); checkGlError("glEnableVertexAttribArray gvNormalMain");
+    glVertexAttribPointer(gvNormalMain, 2, GL_FLOAT, GL_FALSE, 5*sizeof(GLfloat), (const void*)(3*sizeof(GLfloat))); checkGlError("glVertexAttribPointer");
+    glEnableVertexAttribArray(gvPositionCaustics); checkGlError("glEnableVertexAttribArray gvPositionCaustics");
+    glVertexAttribPointer(gvPositionCaustics, 3, GL_FLOAT, GL_FALSE, 5*sizeof(GLfloat), (const void*)0); checkGlError("glVertexAttribPointer");
+    glEnableVertexAttribArray(gvNormalCaustics); checkGlError("glEnableVertexAttribArray gvNormalCaustics");
+    glVertexAttribPointer(gvNormalCaustics, 2, GL_FLOAT, GL_FALSE, 5*sizeof(GLfloat), (const void*)(3*sizeof(GLfloat))); checkGlError("glVertexAttribPointer");
+
     glDisable(GL_DEPTH_TEST);
 //    glDepthRangef(-20.0, 20.0);
 
@@ -267,54 +285,25 @@ bool setupGraphics(int w, int h) {
 void renderFrame() {
 	adjust_vertices();
 	move_eye();
-
-    glBindBuffer(GL_ARRAY_BUFFER, vboIds[0]); checkGlError("glBindBuffer GL_ARRAY_BUFFER");
-    glBufferData(GL_ARRAY_BUFFER, 5*sizeof(GLfloat)*VERTEX_COUNT, vertices, GL_DYNAMIC_DRAW); checkGlError("glBufferData GL_ARRAY_BUFFER");
-
-
-
-    glUseProgram(gProgramCaustics); checkGlError("glUseProgram Caustics");
-    glEnableVertexAttribArray(gvPositionCaustics); checkGlError("glEnableVertexAttribArray gvPositionCaustics");
-    glVertexAttribPointer(gvPositionCaustics, 3, GL_FLOAT, GL_FALSE, 5*sizeof(GLfloat), (const void*)0); checkGlError("glVertexAttribPointer");
-    glEnableVertexAttribArray(gvNormalCaustics); checkGlError("glEnableVertexAttribArray gvNormalCaustics");
-    glVertexAttribPointer(gvNormalCaustics, 2, GL_FLOAT, GL_FALSE, 5*sizeof(GLfloat), (const void*)(3*sizeof(GLfloat))); checkGlError("glVertexAttribPointer");
-
-    //caustics pass
-
-    glGenTextures(1, &gvCausticsTexture);
-    glActiveTexture(GL_TEXTURE0); checkGlError("glActiveTexture 1");
-    glBindTexture ( GL_TEXTURE_2D, gvCausticsTexture ); checkGlError("glBindTexture 1");
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 128, 128, 0, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, NULL);
     /*
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     */
-    glGenFramebuffers(1, &gvFrameBuffer);
+
+    glBufferData(GL_ARRAY_BUFFER, 5*sizeof(GLfloat)*VERTEX_COUNT, vertices, GL_DYNAMIC_DRAW); checkGlError("glBufferData GL_ARRAY_BUFFER");
+
+    //caustics pass
+    glUseProgram(gProgramCaustics); checkGlError("glUseProgram Caustics");
     glBindFramebuffer(GL_FRAMEBUFFER, gvFrameBuffer);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, gvCausticsTexture, 0);
     glViewport(0, 0, 128, 128);
-    if (glCheckFramebufferStatus(GL_FRAMEBUFFER)!=GL_FRAMEBUFFER_COMPLETE)
-    	LOGI("Framebuffer incomplete\n");
-
-
     glClearColor(0.0, 0.0, 0.0, 0.0); checkGlError("glClearColor");
     glClear(GL_COLOR_BUFFER_BIT); checkGlError("glClear");
-
-    glBindTexture ( GL_TEXTURE_2D, 0 ); checkGlError("glBindTexture 1");
     glDrawElements(GL_TRIANGLE_STRIP, INDEX_COUNT, GL_UNSIGNED_SHORT, 0); checkGlError("glDrawElements");
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, 0, 0);
-
-
 
     //main pass
     glUseProgram(gProgramMain); checkGlError("glUseProgram");
-    glEnableVertexAttribArray(gvPositionMain); checkGlError("glEnableVertexAttribArray gvPositionMain");
-    glVertexAttribPointer(gvPositionMain, 3, GL_FLOAT, GL_FALSE, 5*sizeof(GLfloat), (const void*)0); checkGlError("glVertexAttribPointer");
-    glEnableVertexAttribArray(gvNormalMain); checkGlError("glEnableVertexAttribArray gvNormalMain");
-    glVertexAttribPointer(gvNormalMain, 2, GL_FLOAT, GL_FALSE, 5*sizeof(GLfloat), (const void*)(3*sizeof(GLfloat))); checkGlError("glVertexAttribPointer");
-
     glUniform3f ( gvEyepos, eye.x, eye.y, eye.z ); checkGlError("set Eyepos");
     glUniformMatrix4fv(	gvTrans, 1, false, matrix); checkGlError("set matrix");
     glUniform1f ( gvSunsize, cos(2.0*2*3.14159/360.0) ); checkGlError("set Eyesize");
@@ -329,13 +318,10 @@ void renderFrame() {
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glViewport(0, 0, width, height);
-
     glClearColor(0.5, 0.5, 0.5, 1.0f); checkGlError("glClearColor");
     glClear( GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT); checkGlError("glClear");
     glDrawElements(GL_TRIANGLE_STRIP, INDEX_COUNT, GL_UNSIGNED_SHORT, 0); checkGlError("glDrawElements");
 
-    glDeleteTextures(1, &gvCausticsTexture);
-    glDeleteFramebuffers(1, &gvFrameBuffer);
 }
 
 
@@ -448,7 +434,7 @@ char gFragmentMain[] =
     "precision mediump float;"
 	DECLS_MAIN
     "void main() {"
-	"    gl_FragColor = v_shine + textureCube(u_texture, v_splat) /*texture2D(u_causture, vec2(v_splat.x, -v_splat.z))*/ *v_fog;"
+	"    gl_FragColor = v_shine + textureCube(u_texture, v_splat)*texture2D(u_causture, vec2(v_splat.x, -v_splat.z))*v_fog;"
 //	"    gl_FragColor = v_shine + textureCube(u_texture, v_splat)*testcol()*v_fog;"
     "}"
 
@@ -474,7 +460,7 @@ char gVertexCaustics[] =
 	DECLS_CAUSTICS
 
     "void main() {"
-    "  v_position = 10.0*a_position;"
+    "  v_position = 10.0*a_position + vec3(0.0*a_normal,0.0);"
     "  gl_Position = vec4(v_position, 1.0);"
     "}"
 	;
@@ -487,8 +473,8 @@ char gFragmentCaustics[] =
     "{"
     "  vec3 temp;"
 	"  temp = v_position*18.0;"
-//	"  return vec4(1.0, 1.0, 1.0, 1.0) * (0.5 + 0.25*(cos(temp.x+temp.y) + cos(temp.x-temp.y)) );"
-	"  return ( (cos(temp.x+temp.y) + cos(temp.x-temp.y))>0.0 ) ? vec4(0.0, 1.0, 0.0, 1.0) : vec4(1.0, 0.0, 0.0, 1.0);"
+	"  return vec4(1.0, 1.0, 1.0, 1.0) * (0.5 + 0.25*(cos(temp.x+temp.y) + cos(temp.x-temp.y)) );"
+//	"  return ( (cos(temp.x+temp.y) + cos(temp.x-temp.y))>0.0 ) ? vec4(0.0, 1.0, 0.0, 1.0) : vec4(1.0, 0.0, 0.0, 1.0);"
     "}"
     "void main() {"
 	"    gl_FragColor = testcol();"
