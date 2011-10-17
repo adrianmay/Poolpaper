@@ -112,7 +112,7 @@ public class PoolpaperRenderer implements GLSurfaceView.Renderer {
         		GL11ExtensionPack.GL_TEXTURE_CUBE_MAP_NEGATIVE_Y  //top
         		};
         
-        for (int i = 0;i<6; i++)
+        for (int i = 0;i<6; i++)       
         {    
             Bitmap temp = BitmapFactory.decodeResource(context.getResources(), resources[i], opts);
             Bitmap bmp = Bitmap.createBitmap(temp, 0, 0, temp.getWidth(), temp.getHeight(), flip, true);
