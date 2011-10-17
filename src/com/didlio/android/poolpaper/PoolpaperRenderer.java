@@ -22,11 +22,11 @@ public class PoolpaperRenderer implements GLSurfaceView.Renderer {
 	private PoolpaperService service;
 	public PoolpaperRenderer(PoolpaperService s) {service=s;}
     public void onDrawFrame(GL10 gl) {                    
-        C.step();            
+        C.step();              
     }                                
       
-    public void onSurfaceChanged(GL10 gl, int width, int height) {
-        C.init(width, height);   
+    public void onSurfaceChanged(GL10 gl, int width, int height) {        
+        C.init(width, height);    
     }                                     
         
     public void onSurfaceCreated(GL10 gl, EGLConfig config) {     
@@ -78,7 +78,7 @@ public class PoolpaperRenderer implements GLSurfaceView.Renderer {
                                                                             
         mipMap(gl, bmp, GL10.GL_TEXTURE_2D); 
              
-        
+           
         return id;
     }
 
@@ -112,7 +112,7 @@ public class PoolpaperRenderer implements GLSurfaceView.Renderer {
         		GL11ExtensionPack.GL_TEXTURE_CUBE_MAP_NEGATIVE_Y  //top
         		};
         
-        for (int i = 0;i<6; i++)       
+        for (int i = 0;i<6; i++)        
         {    
             Bitmap temp = BitmapFactory.decodeResource(context.getResources(), resources[i], opts);
             Bitmap bmp = Bitmap.createBitmap(temp, 0, 0, temp.getWidth(), temp.getHeight(), flip, true);
