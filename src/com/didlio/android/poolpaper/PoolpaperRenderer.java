@@ -33,13 +33,21 @@ public class PoolpaperRenderer implements GLSurfaceView.Renderer {
     public void onSurfaceCreated(GL10 gl, EGLConfig config) {     
 //        C.bitmap(loadTexture(gl, service, R.drawable.didlio));
         C.bitmap(loadCubeTexture(gl, service, new int [] {
+        		R.drawable.chess,
+        		R.drawable.chess,
+        		R.drawable.chess,                 
+        		R.drawable.chess,
+        		R.drawable.chess,               
+        		R.drawable.chess         
+        		/*
         		R.drawable.bot,
         		R.drawable.fro,
         		R.drawable.rig,                 
         		R.drawable.bac,
         		R.drawable.lef,               
-        		R.drawable.top
-        		}));                                          
+        		R.drawable.top 
+        		*/
+        		}));                                            
     }   
   	      
  // Get a new texture id:   
@@ -109,19 +117,19 @@ public class PoolpaperRenderer implements GLSurfaceView.Renderer {
         		GL11ExtensionPack.GL_TEXTURE_CUBE_MAP_POSITIVE_Z, //front
         		GL11ExtensionPack.GL_TEXTURE_CUBE_MAP_POSITIVE_X, //right                 
         		GL11ExtensionPack.GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, //back
-        		GL11ExtensionPack.GL_TEXTURE_CUBE_MAP_NEGATIVE_X, //left
+        		GL11ExtensionPack.GL_TEXTURE_CUBE_MAP_NEGATIVE_X, //left                   
         		GL11ExtensionPack.GL_TEXTURE_CUBE_MAP_NEGATIVE_Y  //top
         		};
         
-        for (int i = 0;i<6; i++)        
-        {    
+        for (int i = 0;i<6; i++)                      
+        {     
             Bitmap temp = BitmapFactory.decodeResource(context.getResources(), resources[i], opts);
             Bitmap bmp = Bitmap.createBitmap(temp, 0, 0, temp.getWidth(), temp.getHeight(), flip, true);
             temp.recycle();     
             gl.glBindTexture(GL11ExtensionPack.GL_TEXTURE_CUBE_MAP, id);                                              
             mipMap(gl, bmp, roles[i]);  
         }
-           
+             
         return id;            
     }  
   
