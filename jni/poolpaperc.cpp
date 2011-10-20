@@ -43,7 +43,7 @@ const GLfloat VERTEX_PLANE_WIDTH = 1.0f;
 const int CAUSTURE_RES=256;
 
 GLfloat eye_long = 145*3.14159/180.0;
-GLfloat eye_lat = 20.0*3.14159/180.0;
+GLfloat eye_lat = 15.0*3.14159/180.0;
 GLfloat eye_dist = 0.5;
 //GLfloat eye_long = 0.0;
 //GLfloat eye_lat = 3.14159/2.0;
@@ -226,7 +226,7 @@ bool setupGraphics(int w, int h) {
     init_vertices();
 
 	update_eye_cartesian();
-    sun.x = -eye.x+0.15;
+    sun.x = -eye.x+0.10;
     sun.y = -eye.y;
     sun.z = eye.z;
     float sunmag = sqrt ( sun.x*sun.x + sun.y*sun.y + sun.z*sun.z );
@@ -287,7 +287,7 @@ void renderFrame() {
 	adjust_vertices();
 	move_eye();
 
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -296,7 +296,7 @@ void renderFrame() {
     glBufferData(GL_ARRAY_BUFFER, 5*sizeof(GLfloat)*VERTEX_COUNT, vertices, GL_DYNAMIC_DRAW); checkGlError("glBufferData GL_ARRAY_BUFFER");
 
     //caustics pass
-
+/*
     glUseProgram(gProgramCaustics); checkGlError("glUseProgram Caustics");
     glBindFramebuffer(GL_FRAMEBUFFER, gvFrameBuffer);
     glViewport(0, 0, CAUSTURE_RES, CAUSTURE_RES);
@@ -306,24 +306,25 @@ void renderFrame() {
     glBlendFunc(GL_ONE, GL_ONE);checkGlError("glBlendFunc");
     glDrawArrays(GL_POINTS, 0, VERTEX_COUNT); checkGlError("glDrawArrays");
     glDisable(GL_BLEND);
-
+*/
     //main pass
     glUseProgram(gProgramMain); checkGlError("glUseProgram");
     glUniform3f ( gvEyepos, eye.x, eye.y, eye.z ); checkGlError("set Eyepos");
     glUniformMatrix4fv(	gvTrans, 1, false, matrix); checkGlError("set matrix");
-    glUniform1f ( gvSunsize, cos(4.0*2*3.14159/360.0) ); checkGlError("set Eyesize");
     glUniform1f ( gvDepth, 0.5 ); checkGlError("set depth");
     glUniform3f ( gvSunpos, sun.x, sun.y, sun.z ); checkGlError("set Eyepos");
+    glUniform1f ( gvSunsize, cos(3.0*2*3.14159/360.0) ); checkGlError("set Eyesize");
     glActiveTexture(GL_TEXTURE0); checkGlError("glActiveTexture 0");
     glBindTexture ( GL_TEXTURE_CUBE_MAP, bitmap_id ); checkGlError("glBindTexture 0");
     glActiveTexture(GL_TEXTURE1); checkGlError("glActiveTexture 1");
     glBindTexture ( GL_TEXTURE_2D, gvCausticsTexture ); checkGlError("glBindTexture 1");
+    glGenerateMipmap(GL_TEXTURE_2D);
     glUniform1i ( gvSamplerHandle, 0 ); checkGlError("gvSamplerHandle 0");
     glUniform1i ( gvCausture, 1 ); checkGlError("gvSamplerHandle 1");
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glViewport(0, 0, width, height);
-    glClearColor(1.0,0.87,0.67,1.0); checkGlError("glClearColor");
+    glClearColor(0.5,0.45,0.15,1.0); checkGlError("glClearColor");
     glClear( GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT); checkGlError("glClear");
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -343,7 +344,7 @@ void renderFrame() {
 		"const vec4 c_red = vec4(1.0,0.0,0.0,1.0);" \
 		"const vec4 c_green = vec4(0.0,1.0,0.0,1.0);" \
 		"const vec4 c_blue = vec4(0.0,0.0,1.0,1.0);" \
-		"const vec4 c_ambient = vec4(1.0,0.87,0.67,1.0);" \
+		"const vec4 c_ambient = vec4(0.5,0.45,0.15,1.0);" \
 		"const vec4 c_transparent = vec4(0.0,0.0,0.0,0.0);" \
 		"const vec4 c_fog = vec4(0.3, 0.06, 0.01, 0.0);" \
 	    "uniform bool u_phase;" \
@@ -360,6 +361,7 @@ void renderFrame() {
 		"invariant varying vec3 v_divi;" \
 	    "invariant varying vec3 v_splat;" \
 	    "invariant varying vec4 v_fog;" \
+	    "invariant varying vec4 v_causcol;" \
 	    "invariant varying vec4 v_shine;"
 
 char gVertexMain[] =
@@ -418,22 +420,18 @@ char gVertexMain[] =
     "  v_normal.y = a_normal.y;"
     "  v_normal.z = c_one;"
     "  v_normal = normalize(v_normal);"
-	"  fresnel(normalize(a_position - u_eyepos), v_normal, 1.0, v_reflect, v_refract, r, t);"
+	"  fresnel(normalize(a_position - u_eyepos), v_normal, 0.75, v_reflect, v_refract, r, t);"
 	"  v_shine = (dot(u_sunpos,v_reflect) >= u_sunsize) ? c_white : c_ambient*r ;"
 //	"  v_shine = c_black;"
 	"  findsplat(a_position, v_refract, v_splat);"
 	"  water = length(v_splat - a_position);"
 	"  v_fog = exp(-c_fog*water*3.0);"
-//	"  fresnel(normalize(-v_refract), -v_normal, 1.33, dummy, v_refract, r, t);"
-//	"  fresnel(-v_refract, v_normal, 1.33, 1.0, r, t);"
 	"  v_fog.w = 1.0; "
 	"  v_fog = v_fog * t;"
-//	"  fresnel(-v_reflect, v_normal, 1.0, 1.33, r, t);"
-//	"  v_shine = c_black ;"
+//	"  v_causcol = texture2D(u_causture, vec2(v_splat.x+0.5, v_splat.y+0.5));"
 	"  water = v_splat.y;"
 	"  v_splat.y = -v_splat.z;"
 	"  v_splat.z = water;"
-//    "  v_position = a_position;"
     "}"
 	;
 //	"  vec2 texcoord = mod(floor(v_splat * 10.0), 2.0);\n"
@@ -450,11 +448,11 @@ char gFragmentMain[] =
 	DECLS_MAIN
     "void main() {"
     "    float pz = -v_splat.y + 1.5;"
-    "    vec2 lu = vec2((v_splat.x+0.5)/pz, (v_splat.z+0.5)/pz);"
-    "    vec4 causcol = mix(0.7*c_white ,texture2D(u_causture, lu), v_splat.y*2.0);"
+//    "    vec2 lu = vec2((v_splat.x+0.5)/pz, (v_splat.z+0.5)/pz);"
+//    "    vec4 causcol = mix(0.7*c_white ,texture2D(u_causture, lu), v_splat.y*2.0);"
 //    "    vec4 causcol = texture2D(u_causture, vec2(v_splat.x+0.5, v_splat.z+0.5));"
     "    vec4 cubecol = (textureCube(u_texture, v_splat)+0.25)*0.8;"
-	"    gl_FragColor =  v_shine + cubecol*v_fog*causcol;"
+	"    gl_FragColor =  v_shine + cubecol*v_fog;"//*v_causcol;"
 //	"	gl_FragColor = vec4(v_splat.x+0.5, v_splat.y+0.5, v_splat.z+0.5, 1.0);"
 //	"	float xx = v_splat.x*v_splat.x;"
 /*	"	float yy = v_splat.y*v_splat.y;"

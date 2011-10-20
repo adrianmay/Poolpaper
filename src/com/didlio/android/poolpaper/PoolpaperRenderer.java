@@ -15,7 +15,7 @@ import android.opengl.GLSurfaceView;
 import android.opengl.GLUtils;                           
  
 import com.didlio.android.poolpaper.*;   
-                    
+                     
     
                                                                  
 public class PoolpaperRenderer implements GLSurfaceView.Renderer {
@@ -24,7 +24,7 @@ public class PoolpaperRenderer implements GLSurfaceView.Renderer {
 	public PoolpaperRenderer(PoolpaperService s) {service=s;}
     public void onDrawFrame(GL10 gl) {                    
         C.step();              
-    }                                
+    }                                                                  
       
     public void onSurfaceChanged(GL10 gl, int width, int height) {        
         C.init(width, height);    
