@@ -538,7 +538,7 @@ char gVertexCaustics[] =
     "  v_position = a_position - 0.1667* vec3(a_normal, 0.0);"
     "  gl_Position = vec4(2.0*v_position.x, 2.0*v_position.y, 0.0, 1.0);"
     "  v_caustex = a_caustex;"
-    "  v_concentration  = 0.5*(1.0+a_concentration);"
+    "  v_concentration  = (1.0+a_concentration);"
     "}"
 	;
 
