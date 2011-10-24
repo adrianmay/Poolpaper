@@ -157,7 +157,7 @@ public class PoolpaperRenderer implements GLSurfaceView.Renderer {
         bmp.recycle();
     }
 
-    private void mipMapBrighter(GL10 gl, Bitmap bmp, int role)
+    private void mipMapBrighter(GL10 gl, Bitmap bmp, int role)        
     {
         // Generate, and load up all of the mipmaps:
     	float brightness; int level, height, width;    

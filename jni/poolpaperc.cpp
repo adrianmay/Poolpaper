@@ -549,7 +549,7 @@ char gFragmentCaustics[] =
 //    "    float d = gl_PointCoord.x + gl_PointCoord.y - 2.0;"
 //    "    float c = pow(0.15,1.0+d*d);"
 //	"    gl_FragColor = vec4(c,c,c,1.0);"
-	"    float brightness = 0.5/v_concentration;"
+	"    float brightness = 0.4+0.85/v_concentration;"
 	"    gl_FragColor = vec4(brightness, brightness, brightness, 1.0);"//vec4(0.6,0.6,0.6,1.0);"
     "}"
 	;
