@@ -45,7 +45,7 @@ struct Vertex {
 
 const int VERTEX_GAPS=128;
 const GLfloat VERTEX_PLANE_WIDTH = 1.0f;
-const int CAUSTURE_RES=512;
+const int CAUSTURE_RES=256;
 
 GLfloat eye_long = 145*3.14159/180.0;
 GLfloat eye_lat = 15.0*3.14159/180.0;
@@ -349,7 +349,7 @@ void renderFrame() {
     glBindTexture ( GL_TEXTURE_CUBE_MAP, bitmap_ids[0] ); checkGlError("glBindTexture 0");
     glActiveTexture(GL_TEXTURE1); checkGlError("glActiveTexture 1");
     glBindTexture ( GL_TEXTURE_2D, gvCausticsTexture ); checkGlError("glBindTexture 1");
-    glGenerateMipmap(GL_TEXTURE_2D);
+    //glGenerateMipmap(GL_TEXTURE_2D);
     glUniform1i ( gvSamplerHandle, 0 ); checkGlError("gvSamplerHandle 0");
     glUniform1i ( gvCausture, 1 ); checkGlError("gvSamplerHandle 1");
 
@@ -499,7 +499,7 @@ char gVertexCaustics[] =
     "  v_position = a_position - 0.1667* vec3(a_normal, 0.0);"
     "  gl_Position = vec4(2.0*v_position.x, 2.0*v_position.y, 0.0, 1.0);"
     "  v_caustex = a_caustex;"
-    "  v_concentration  = (1.0+a_concentration);"
+    "  v_concentration  = 0.4+0.85/(1.0+a_concentration);"
     "}"
 	;
 
@@ -510,7 +510,7 @@ char gFragmentCaustics[] =
 //    "    float d = gl_PointCoord.x + gl_PointCoord.y - 2.0;"
 //    "    float c = pow(0.15,1.0+d*d);"
 //	"    gl_FragColor = vec4(c,c,c,1.0);"
-	"    float brightness = 0.4+0.85/v_concentration;"
+	"    float brightness = v_concentration;"
 	"    gl_FragColor = vec4(brightness, brightness, brightness, 1.0);"//vec4(0.6,0.6,0.6,1.0);"
     "}"
 	;
