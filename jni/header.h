@@ -20,7 +20,7 @@
 #define GL_TEXTURE_WRAP_R 0x8072
 bool setupGraphics(int w, int h);
 void renderFrame();
-void bitmap(int id);
+void bitmap(int which, int id);
 
 
 

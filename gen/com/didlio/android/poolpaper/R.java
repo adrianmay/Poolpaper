@@ -28,8 +28,10 @@ public final class R {
         public static final int sun=0x7f02000e;
         public static final int top=0x7f02000f;
         public static final int union_jack=0x7f020010;
-        public static final int white_cross_on_blue=0x7f020011;
-        public static final int white_dots_on_blue=0x7f020012;
+        public static final int white_2048=0x7f020011;
+        public static final int white_256=0x7f020012;
+        public static final int white_cross_on_blue=0x7f020013;
+        public static final int white_dots_on_blue=0x7f020014;
     }
     public static final class string {
         public static final int app_name=0x7f040000;

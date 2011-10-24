@@ -15,7 +15,7 @@ import android.opengl.GLSurfaceView;
 import android.opengl.GLUtils;                           
  
 import com.didlio.android.poolpaper.*;   
-                     
+                        
     
                                                                  
 public class PoolpaperRenderer implements GLSurfaceView.Renderer {
@@ -30,15 +30,15 @@ public class PoolpaperRenderer implements GLSurfaceView.Renderer {
         C.init(width, height);    
     }                                     
         
-    public void onSurfaceCreated(GL10 gl, EGLConfig config) {     
-//        C.bitmap(loadTexture(gl, service, R.drawable.didlio));
-        C.bitmap(loadCubeTexture(gl, service, new int [] {
+    public void onSurfaceCreated(GL10 gl, EGLConfig config) {           
+        C.bitmap(1,loadTexture(gl, service, R.drawable.white_2048));  
+        C.bitmap(0, loadCubeTexture(gl, service, new int [] {
         		R.drawable.chess,
-        		R.drawable.chess,
-        		R.drawable.chess,                 
+        		R.drawable.chess,                      
+        		R.drawable.chess,                  
         		R.drawable.chess,
         		R.drawable.chess,               
-        		R.drawable.chess         
+        		R.drawable.chess           
         		/*
         		R.drawable.bot,
         		R.drawable.fro,
@@ -85,7 +85,7 @@ public class PoolpaperRenderer implements GLSurfaceView.Renderer {
                                                             
         gl.glBindTexture(GL10.GL_TEXTURE_2D, id);    
                                                                             
-        mipMap(gl, bmp, GL10.GL_TEXTURE_2D); 
+        mipMapBrighter(gl, bmp, GL10.GL_TEXTURE_2D); 
              
              
         return id;
@@ -152,6 +152,30 @@ public class PoolpaperRenderer implements GLSurfaceView.Renderer {
             if (level>2)    
              bmp2.eraseColor(Color.WHITE);
             bmp.recycle();
+            bmp = bmp2;
+        }             
+        bmp.recycle();
+    }
+
+    private void mipMapBrighter(GL10 gl, Bitmap bmp, int role)
+    {
+        // Generate, and load up all of the mipmaps:
+    	float brightness; int level, height, width;    
+        for(level=0, height = bmp.getHeight(), width = bmp.getWidth(), brightness = (float) (1.0/12.0); true; level++, brightness*=1.414) {
+            // Push the bitmap onto the GPU:
+            GLUtils.texImage2D(role, level, bmp, 0);   
+            
+            // We need to stop when the texture is 1x1:   
+            if(height==1 && width==1) break;    
+            
+            // Resize, and let's go again:           
+            width >>= 1; height >>= 1;
+            if(width<1)  width = 1;
+            if(height<1) height = 1;
+            
+            Bitmap bmp2 = Bitmap.createScaledBitmap(bmp, width, height, true);
+            bmp2.eraseColor(Color.rgb((int)brightness*255, (int)brightness*255, (int)brightness*255));
+            bmp.recycle(); 
             bmp = bmp2;
         }             
         bmp.recycle();
