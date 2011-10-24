@@ -26,7 +26,7 @@ void bitmap(int which, int id)
 }
 
 GLuint gProgramMain, gvPositionMain, gvNormalMain, gvSamplerHandle, gvTrans, gvEyepos, gvSunpos, gvSunsize, gvDepth, gvCausticsTexture, gvCausture;
-GLuint gProgramCaustics, gvPositionCaustics, gvNormalCaustics, gvFrameBuffer, gvCaustexMain, gvWhiteTrick, gvConcentrationCaustics;
+GLuint gProgramCaustics, gvPositionCaustics, gvNormalCaustics, gvFrameBuffer, gvCaustexMain, gvConcentrationCaustics;
 
 extern char gVertexMain[];
 extern char gFragmentMain[];
@@ -230,8 +230,6 @@ void getLocations()
     gvPositionCaustics = glGetAttribLocation(gProgramCaustics, "a_position"); checkGlError("glGetAttribLocation");
     gvNormalCaustics = glGetAttribLocation(gProgramCaustics, "a_normal"); checkGlError("glGetAttribLocation");
     gvConcentrationCaustics = glGetAttribLocation(gProgramCaustics, "a_concentration"); checkGlError("glGetAttribLocation");
-    gvWhiteTrick = glGetUniformLocation(gProgramCaustics, "u_whitetrick"); checkGlError("glGetAttribLocation");
-
 }
 
 bool setupGraphics(int w, int h) {
@@ -330,9 +328,6 @@ void renderFrame() {
     glClear(GL_COLOR_BUFFER_BIT); checkGlError("glClear");
     glEnable(GL_BLEND);checkGlError("glEnable Blend");
     glBlendFunc(GL_ONE, GL_ONE);checkGlError("glBlendFunc");
-    glActiveTexture(GL_TEXTURE2); checkGlError("glActiveTexture 1");
-    glBindTexture ( GL_TEXTURE_2D, bitmap_ids[1] ); checkGlError("glBindTexture 2");
-    glUniform1i ( gvWhiteTrick, 2 ); checkGlError("gvSamplerHandle 2");
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glDrawElements(GL_TRIANGLE_STRIP, INDEX_COUNT, GL_UNSIGNED_SHORT, 0); checkGlError("glDrawElements Caustics");
@@ -471,13 +466,6 @@ char gVertexMain[] =
 	"  v_splat.z = water;"
     "}"
 	;
-//	"  vec2 texcoord = mod(floor(v_splat * 10.0), 2.0);\n"
-//	"  float delta = abs(texcoord.x - texcoord.y);\n"
-//	"  v_colour = v_colour + mix(c_darkblue, c_lightblue, delta);\n"
-//	"  texture2D(u_texture, (v_splat+0.25)*5.0); "
-
-//    "			     0.2*((v_normal.x+v_normal.y)/2.0)*c_darkblue+0.2*(1.0-(v_normal.x+v_normal.y)/2.0)*c_lightblue"
-//	"               + (( dot(normalize(gl_Position-u_sunpos),v_reflect) >= u_sunsize) ? c_white : c_darkblue)"
 
 
 char gFragmentMain[] =
@@ -485,40 +473,13 @@ char gFragmentMain[] =
 	DECLS_MAIN
     "void main() {"
     "    float pz = -v_splat.y + 1.5;"
-//    "    vec2 lu = vec2((v_splat.x+0.5)/pz, (v_splat.z+0.5)/pz);"
-//    "    vec4 causcol = mix(0.7*c_white ,texture2D(u_causture, lu), v_splat.y*2.0);"
     "    vec4 causcol = vec4(0.0);"
-//    "    float blur=1.0/512.0;"
-//	"    causcol += texture2D(u_causture, vec2(v_splat.x+0.5+blur, v_splat.z+0.5));"
-//	"    causcol += texture2D(u_causture, vec2(v_splat.x+0.5-blur, v_splat.z+0.5));"
-//	"    causcol += texture2D(u_causture, vec2(v_splat.x+0.5, v_splat.z+0.5+blur));"
-//	"    causcol += texture2D(u_causture, vec2(v_splat.x+0.5, v_splat.z+0.5-blur));"
-//	"    causcol /= 8.0;"
-	"    causcol += texture2D(u_causture, vec2((v_splat.x-v_splat.y*0.1)+0.5, (v_splat.z-v_splat.y*0.1)+0.5));"
+	"    causcol += texture2D(u_causture, vec2((v_splat.x-v_splat.y*0.1)*0.85+0.5, (v_splat.z-v_splat.y*0.1)*0.85+0.5));"
     "    vec4 cubecol = (textureCube(u_texture, v_splat)+0.25)*0.8;"
 	"    gl_FragColor =  v_shine + cubecol*v_fog*causcol;"
-//	"	gl_FragColor = vec4(v_splat.x+0.5, v_splat.y+0.5, v_splat.z+0.5, 1.0);"
-//	"	float xx = v_splat.x*v_splat.x;"
-/*	"	float yy = v_splat.y*v_splat.y;"
-	"	float zz = v_splat.z*v_splat.z;"
-	"	gl_FragColor = "
-	"       (xx>yy && xx>zz) ? (c_red*f(v_splat.y,v_splat.z)) : "
-	"	 	(yy>xx && yy>zz) ? (c_green*f(v_splat.x,v_splat.z)) : "
-	"	 	(zz>xx && zz>yy) ? (c_blue*f(v_splat.x,v_splat.y)) : c_black;"
-*/
-//	"    gl_FragColor = v_shine + textureCube(u_texture, v_splat)*testcol()*v_fog;"
     "}"
 
 	;
-//	"  vec2 texcoord = mod(floor(v_splat * 10.0), 2.0);\n"
-//	"  float delta = abs(texcoord.x - texcoord.y);\n"
-//	"    mix(c_darkblue, c_lightblue, delta);\n"
-//    "  gl_FragColor = v_colour;"
-//	"                ( dot(u_sunpos,v_reflect) >= u_sunsize) ? c_white : "
-//	"                 v_colour + ("
-//	"				    ( mod( (floor(v_splat.x)+floor(v_splat.y)) ,2.0)==0.0 ) ? c_darkblue : c_lightblue);"
-//	"                 vec4(v_splat.x, v_splat.y, 0.0, 1.0);"
-//    "  gl_FragColor.w = 1.0;\n"
 
 
 #define DECLS_CAUSTICS \

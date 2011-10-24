@@ -31,7 +31,6 @@ public class PoolpaperRenderer implements GLSurfaceView.Renderer {
     }                                     
         
     public void onSurfaceCreated(GL10 gl, EGLConfig config) {           
-        C.bitmap(1,loadTexture(gl, service, R.drawable.white_2048));  
         C.bitmap(0, loadCubeTexture(gl, service, new int [] {
         		R.drawable.chess,
         		R.drawable.chess,                      
@@ -168,7 +167,7 @@ public class PoolpaperRenderer implements GLSurfaceView.Renderer {
             // We need to stop when the texture is 1x1:   
             if(height==1 && width==1) break;    
             
-            // Resize, and let's go again:           
+            // Resize, and let's go again:             
             width >>= 1; height >>= 1;
             if(width<1)  width = 1;
             if(height<1) height = 1;
