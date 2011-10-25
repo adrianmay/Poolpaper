@@ -356,6 +356,7 @@ void renderFrame() {
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glViewport(0, 0, width, height);
+    glClearColor(0.0,0.0,0.0,0.0); checkGlError("glClearColor");
     glClearColor(0.5,0.45,0.15,1.0); checkGlError("glClearColor");
     glClear( GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT); checkGlError("glClear");
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -364,6 +365,7 @@ void renderFrame() {
 
 }
 //"const vec4 c_ambient = vec4(1.5,1.0,0.5,1.0);" \
+"const vec4 c_ambient = vec4(0.5,0.45,0.15,1.0);" \
 
 
 #define DECLS_MAIN \
@@ -376,7 +378,7 @@ void renderFrame() {
 		"const vec4 c_red = vec4(1.0,0.0,0.0,1.0);" \
 		"const vec4 c_green = vec4(0.0,1.0,0.0,1.0);" \
 		"const vec4 c_blue = vec4(0.0,0.0,1.0,1.0);" \
-		"const vec4 c_ambient = vec4(0.5,0.45,0.15,1.0);" \
+		"const vec4 c_ambient = vec4(0.0,0.0,0.0,0.0);" \
 		"const vec4 c_transparent = vec4(0.0,0.0,0.0,0.0);" \
 		"const vec4 c_fog = vec4(0.3, 0.06, 0.01, 0.0);" \
 	    "uniform bool u_phase;" \
