@@ -63,7 +63,6 @@ Vec3 sun;
 Vertex vertices[VERTEX_GAPS+1][VERTEX_GAPS+1];
 GLushort indices[INDEX_COUNT];
 GLfloat velocities[VERTEX_GAPS+1][VERTEX_GAPS+1];
-Vec2 caustex[VERTEX_GAPS+1][VERTEX_GAPS+1];
 
 GLfloat matrix[16];
 
@@ -131,8 +130,6 @@ void init_vertices()
            vertices[x][y].norm.x=0;
            vertices[x][y].norm.y=0;
            velocities[x][y]=0.0;
-           caustex[x][y].x = x%2 ? 0.1 : 0.9;
-           caustex[x][y].y = y%2 ? 0.1 : 0.9;
        }
    for (i=0;i<50;i++)
 	   plop();
@@ -226,7 +223,6 @@ void getLocations()
     gvSunsize = glGetUniformLocation(gProgramMain, "u_sunsize"); checkGlError("glGetAttribLocation");
     gvDepth = glGetUniformLocation(gProgramMain, "u_depth"); checkGlError("glGetAttribLocation");
 
-    gvCaustexMain = glGetAttribLocation(gProgramCaustics, "a_caustex"); checkGlError("glGetAttribLocation");
     gvPositionCaustics = glGetAttribLocation(gProgramCaustics, "a_position"); checkGlError("glGetAttribLocation");
     gvNormalCaustics = glGetAttribLocation(gProgramCaustics, "a_normal"); checkGlError("glGetAttribLocation");
     gvConcentrationCaustics = glGetAttribLocation(gProgramCaustics, "a_concentration"); checkGlError("glGetAttribLocation");
@@ -265,14 +261,10 @@ bool setupGraphics(int w, int h) {
         return false;
     }
 
-    glGenBuffers(3, vboIds);
+    glGenBuffers(2, vboIds);
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vboIds[1]);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLushort) * INDEX_COUNT, indices, GL_DYNAMIC_DRAW);
-
-    glBindBuffer(GL_ARRAY_BUFFER, vboIds[2]);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(Vec2)*VERTEX_COUNT, caustex, GL_STATIC_DRAW);
-    glBindBuffer(GL_ARRAY_BUFFER, vboIds[0]);
 
     getLocations();
 
@@ -311,9 +303,6 @@ void renderFrame() {
     //caustics pass
 
     glUseProgram(gProgramCaustics); checkGlError("glUseProgram Caustics");
-    glBindBuffer(GL_ARRAY_BUFFER, vboIds[2]); checkGlError("glBindBuffer GL_ARRAY_BUFFER");
-    glEnableVertexAttribArray(gvCaustexMain); checkGlError("glEnableVertexAttribArray gvCaustexMain");
-    glVertexAttribPointer(gvCaustexMain, 2, GL_FLOAT, GL_FALSE, 2*sizeof(GLfloat), (const void*)0); checkGlError("glVertexAttribPointer");
 
     glBindBuffer(GL_ARRAY_BUFFER, vboIds[0]); checkGlError("glBindBuffer GL_ARRAY_BUFFER");
     glEnableVertexAttribArray(gvPositionCaustics); checkGlError("glEnableVertexAttribArray gvPositionCaustics");
@@ -356,7 +345,6 @@ void renderFrame() {
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glViewport(0, 0, width, height);
-    glClearColor(0.0,0.0,0.0,0.0); checkGlError("glClearColor");
     glClearColor(0.5,0.45,0.15,1.0); checkGlError("glClearColor");
     glClear( GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT); checkGlError("glClear");
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -365,7 +353,6 @@ void renderFrame() {
 
 }
 //"const vec4 c_ambient = vec4(1.5,1.0,0.5,1.0);" \
-"const vec4 c_ambient = vec4(0.5,0.45,0.15,1.0);" \
 
 
 #define DECLS_MAIN \
@@ -378,7 +365,7 @@ void renderFrame() {
 		"const vec4 c_red = vec4(1.0,0.0,0.0,1.0);" \
 		"const vec4 c_green = vec4(0.0,1.0,0.0,1.0);" \
 		"const vec4 c_blue = vec4(0.0,0.0,1.0,1.0);" \
-		"const vec4 c_ambient = vec4(0.0,0.0,0.0,0.0);" \
+		"const vec4 c_ambient = vec4(0.5,0.45,0.15,1.0);" \
 		"const vec4 c_transparent = vec4(0.0,0.0,0.0,0.0);" \
 		"const vec4 c_fog = vec4(0.3, 0.06, 0.01, 0.0);" \
 	    "uniform bool u_phase;" \
@@ -395,7 +382,8 @@ void renderFrame() {
 		"invariant varying vec3 v_divi;" \
 	    "invariant varying vec3 v_splat;" \
 	    "invariant varying vec4 v_fog;" \
-	    "invariant varying vec4 v_causcol;" \
+	    "invariant varying vec2 v_causlookup;" \
+	    "invariant varying float v_r;" \
 	    "invariant varying vec4 v_shine;"
 
 char gVertexMain[] =
@@ -447,17 +435,17 @@ char gVertexMain[] =
 	"}"
 
     "void main() {"
-	"  float water, r, t;"
+	"  float water, t;"
 	"  vec3 dummy;"
     "  gl_Position = u_trans * vec4(a_position, 1.0);"
     "  v_normal.x = a_normal.x;"
     "  v_normal.y = a_normal.y;"
     "  v_normal.z = c_one;"
     "  v_normal = normalize(v_normal);"
-	"  fresnel(normalize(a_position - u_eyepos), v_normal, 0.75, v_reflect, v_refract, r, t);"
-	"  v_shine = (dot(u_sunpos,v_reflect) >= u_sunsize) ? c_white : c_ambient*r ;"
+	"  fresnel(normalize(a_position - u_eyepos), v_normal, 0.75, v_reflect, v_refract, v_r, t);"
 //	"  v_shine = c_black;"
 	"  findsplat(a_position, v_refract, v_splat);"
+	"  v_shine = (dot(u_sunpos,v_reflect) >= u_sunsize) ? c_white : c_ambient*v_r ;"
 	"  water = length(v_splat - a_position);"
 	"  v_fog = exp(-c_fog*water*3.0);"
 	"  v_fog.w = 1.0; "
@@ -466,6 +454,7 @@ char gVertexMain[] =
 	"  water = v_splat.y;"
 	"  v_splat.y = -v_splat.z;"
 	"  v_splat.z = water;"
+	"  v_causlookup = vec2((v_splat.x-v_splat.y*0.1)*0.85+0.5, (v_splat.z-v_splat.y*0.1)*0.85+0.5);"
     "}"
 	;
 
@@ -474,33 +463,27 @@ char gFragmentMain[] =
     "precision mediump float;"
 	DECLS_MAIN
     "void main() {"
-    "    float pz = -v_splat.y + 1.5;"
-    "    vec4 causcol = vec4(0.0);"
-	"    causcol += texture2D(u_causture, vec2((v_splat.x-v_splat.y*0.1)*0.85+0.5, (v_splat.z-v_splat.y*0.1)*0.85+0.5));"
     "    vec4 cubecol = (textureCube(u_texture, v_splat)+0.25)*0.8;"
-	"    gl_FragColor =  v_shine + cubecol*v_fog*causcol;"
+	"    vec4 causcol = texture2D(u_causture, v_causlookup);"
+	"    gl_FragColor =  v_shine + cubecol*v_fog*mix(0.825, causcol.r, v_splat.y*2.0);"
     "}"
 
 	;
 
 
 #define DECLS_CAUSTICS \
-		"uniform sampler2D u_whitetrick;" \
-	    "invariant varying vec2 v_caustex;" \
 	    "invariant varying float v_concentration;" \
 		"invariant varying vec3 v_position;"
 
 char gVertexCaustics[] =
 	"attribute vec3 a_position;"
 	"attribute vec2 a_normal;"
-	"attribute vec2 a_caustex;"
 	"attribute float a_concentration;"
 	DECLS_CAUSTICS
 
     "void main() {"
     "  v_position = a_position - 0.1667* vec3(a_normal, 0.0);"
     "  gl_Position = vec4(2.0*v_position.x, 2.0*v_position.y, 0.0, 1.0);"
-    "  v_caustex = a_caustex;"
     "  v_concentration  = 0.4+0.85/(1.0+a_concentration);"
     "}"
 	;
@@ -512,8 +495,8 @@ char gFragmentCaustics[] =
 //    "    float d = gl_PointCoord.x + gl_PointCoord.y - 2.0;"
 //    "    float c = pow(0.15,1.0+d*d);"
 //	"    gl_FragColor = vec4(c,c,c,1.0);"
-	"    float brightness = v_concentration;"
-	"    gl_FragColor = vec4(brightness, brightness, brightness, 1.0);"//vec4(0.6,0.6,0.6,1.0);"
+//	"    float brightness = ;"
+	"    gl_FragColor = vec4(v_concentration, v_concentration, v_concentration, 1.0);"//vec4(0.6,0.6,0.6,1.0);"
     "}"
 	;
 //	"  vec2 texcoord = mod(floor(v_splat * 10.0), 2.0);\n"

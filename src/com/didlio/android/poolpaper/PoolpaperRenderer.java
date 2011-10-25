@@ -22,7 +22,7 @@ public class PoolpaperRenderer implements GLSurfaceView.Renderer {
                                                                                                    
 	private PoolpaperService service; 
 	public PoolpaperRenderer(PoolpaperService s) {service=s;}
-    public void onDrawFrame(GL10 gl) {                     
+    public void onDrawFrame(GL10 gl) {                                   
         C.step();              
     }                                                                  
       
@@ -31,7 +31,7 @@ public class PoolpaperRenderer implements GLSurfaceView.Renderer {
     }                                     
         
     public void onSurfaceCreated(GL10 gl, EGLConfig config) {           
-        C.bitmap(0, loadCubeTexture(gl, service, new int [] {
+        C.bitmap(0, loadCubeTexture(gl, service, new int [] {        
         		R.drawable.chess,
         		R.drawable.chess,                      
         		R.drawable.chess,                  
