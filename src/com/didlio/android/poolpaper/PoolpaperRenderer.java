@@ -22,7 +22,7 @@ public class PoolpaperRenderer implements GLSurfaceView.Renderer {
                                                                                                    
 	private PoolpaperService service; 
 	public PoolpaperRenderer(PoolpaperService s) {service=s;}
-    public void onDrawFrame(GL10 gl) {                                   
+    public void onDrawFrame(GL10 gl) {                                     
         C.step();              
     }                                                                  
       
@@ -38,7 +38,7 @@ public class PoolpaperRenderer implements GLSurfaceView.Renderer {
         		R.drawable.chess,
         		R.drawable.chess,               
         		R.drawable.chess           
-        		/*
+        		/*                  
         		R.drawable.bot,
         		R.drawable.fro,
         		R.drawable.rig,                 
@@ -47,7 +47,7 @@ public class PoolpaperRenderer implements GLSurfaceView.Renderer {
         		R.drawable.top 
         		*/
         		}));                                            
-    }   
+    }    
   	      
  // Get a new texture id:   
     private static int newTextureID(GL10 gl) {  
@@ -128,8 +128,8 @@ public class PoolpaperRenderer implements GLSurfaceView.Renderer {
             gl.glBindTexture(GL11ExtensionPack.GL_TEXTURE_CUBE_MAP, id);                                              
             mipMap(gl, bmp, roles[i]);  
         }
-             
-        return id;            
+                          
+        return id;                          
     }  
   
     private void mipMap(GL10 gl, Bitmap bmp, int role)
@@ -144,12 +144,12 @@ public class PoolpaperRenderer implements GLSurfaceView.Renderer {
             
             // Resize, and let's go again:  
             width >>= 1; height >>= 1;
-            if(width<1)  width = 1;
+            if(width<1)  width = 1;                               
             if(height<1) height = 1;
             
             Bitmap bmp2 = Bitmap.createScaledBitmap(bmp, width, height, true);
-            if (level>2)    
-             bmp2.eraseColor(Color.WHITE);
+            //if (level>2)    
+            // bmp2.eraseColor(Color.WHITE);
             bmp.recycle();
             bmp = bmp2;
         }             

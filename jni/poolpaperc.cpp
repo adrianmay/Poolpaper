@@ -2,10 +2,7 @@
 /*
  * TODO:
  * Walls
- * Fog
  * Memory mapping
- * Fresnel (ambient above)
- * Caustics
  * Settings
  * Fetch ad
  * Shallow end
@@ -39,17 +36,17 @@ struct Vertex {
 	GLfloat concentration;
 };
 
-#define PLOP_RATE 1200
-#define PLOP_SIZE 0.002
+#define PLOP_HEIGHT 0.002
 #define PLOP_WIDTH 1.0
 
 const int VERTEX_GAPS=128;
 const GLfloat VERTEX_PLANE_WIDTH = 1.0f;
-const int CAUSTURE_RES=256;
+const int CAUSTURE_RES=128;
 
 GLfloat eye_long = 145*3.14159/180.0;
-GLfloat eye_lat = 15.0*3.14159/180.0;
+GLfloat eye_lat = 15*3.14159/180.0;
 GLfloat eye_dist = 0.5;
+GLfloat zoom = 5.0;
 //GLfloat eye_long = 0.0;
 //GLfloat eye_lat = 3.14159/2.0;
 //GLfloat eye_dist = 1.0;
@@ -72,49 +69,51 @@ void update_eye_cartesian()
 	GLfloat temp = eye_dist * cos(eye_lat);
 	eye.x = temp * sin(eye_long);
 	eye.y = -temp * cos(eye_long);
-	Matrix m_tot, m_rot_x, m_rot_z, m_pers, m_scale;
-	m_scale.stretch(4.0f*height/width, 4.0f, 1.0);
+	Matrix m_tot, m_rot_x, m_rot_z, m_pers, m_scale, m_trans;
+
 	m_rot_z.rot_z(-eye_long);
 	m_rot_x.rot_x(3.14159/2.0-eye_lat);
-	m_pers.pers(eye_dist);
 	m_tot.premul(m_rot_z);
 	m_tot.premul(m_rot_x);
+
+	m_pers.pers(eye_dist);
 	m_tot.premul(m_pers);
+
+	m_trans.trans(0.0,0.07,0.0);
+	m_tot.premul(m_trans);
+
+	m_scale.stretch(zoom*height/width, zoom, 1.0);
 	m_tot.premul(m_scale);
+
 	m_tot.transpose_out(matrix);
 	//velocities[(int)(VERTEX_GAPS/2 + eye.x/3.0*VERTEX_GAPS/VERTEX_PLANE_WIDTH)][(int)(VERTEX_GAPS/2 + eye.y/3.0*VERTEX_GAPS/VERTEX_PLANE_WIDTH)] +=0.1;
 }
 
 void move_eye()
 {
-	return;
-	eye_long-=0.03;
-//	eye_lat+=0.002f;
+	//return;
+	eye_long-=0.0025;
+	//eye_lat+=0.001;
 	update_eye_cartesian();
 }
 
 float dir=1.0;
 
-void plop()
+void plop(float width)
 {
    int x,y;
-	if (rand()%PLOP_RATE)
-	{
-		dir *=-1.0;
-		GLfloat plop_width = PLOP_WIDTH;//(rand()%1+1);
-		x = rand()%(VERTEX_GAPS+1);
-		y = rand()%(VERTEX_GAPS+1);
-		int n = (int)(PLOP_WIDTH*5.0);
-		for (int i=-n;i<=n;i++)
-			for (int j=-n;j<=n;j++)
-				if (x+i>=0 && x+i<=VERTEX_GAPS && y+j>=0 && y+j<=VERTEX_GAPS)
-				{
-					GLfloat dist = sqrt((float)i*i+j*j)/plop_width;
-					GLfloat plop = dir*PLOP_SIZE*sin(dist)/(0.3+dist);
-					velocities[x+i][y+j]+=plop;
-				}
-	}
-
+	dir *=-1.0;
+	x = rand()%(VERTEX_GAPS+1);
+	y = rand()%(VERTEX_GAPS+1);
+	int n = (int)(6.0*width);
+	for (int i=-n;i<=n;i++)
+		for (int j=-n;j<=n;j++)
+			if (x+i>=0 && x+i<=VERTEX_GAPS && y+j>=0 && y+j<=VERTEX_GAPS)
+			{
+				GLfloat dist = sqrt((float)i*i+j*j)/width;
+				GLfloat plop = dir*PLOP_HEIGHT* (dist<0.1 ? 1.0 : (sin(dist)/dist) );
+				velocities[x+i][y+j]+=plop;
+			}
 }
 
 void init_vertices()
@@ -131,8 +130,11 @@ void init_vertices()
            vertices[x][y].norm.y=0;
            velocities[x][y]=0.0;
        }
-   for (i=0;i<50;i++)
-	   plop();
+   for (i=0;i<25;i++)
+   {
+	   plop(1.0);
+	   plop(0.5);
+   }
    i=0;
 
     for (x=0;x<VERTEX_GAPS;x++)
@@ -241,7 +243,7 @@ bool setupGraphics(int w, int h) {
     init_vertices();
 
 	update_eye_cartesian();
-    sun.x = -eye.x+0.10;
+    sun.x = -eye.x-0.15;
     sun.y = -eye.y;
     sun.z = eye.z;
     float sunmag = sqrt ( sun.x*sun.x + sun.y*sun.y + sun.z*sun.z );
@@ -282,7 +284,7 @@ bool setupGraphics(int w, int h) {
 
     glBindBuffer(GL_ARRAY_BUFFER, vboIds[0]); checkGlError("glBindBuffer GL_ARRAY_BUFFER");
 
-    glDisable(GL_DEPTH_TEST);
+    glEnable(GL_DEPTH_TEST);
 //    glDepthRangef(-20.0, 20.0);
 
     checkGlError("glViewport");
@@ -344,11 +346,14 @@ void renderFrame() {
 
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glViewport(0, 0, width, height);
-    glClearColor(0.5,0.45,0.15,1.0); checkGlError("glClearColor");
+//    glDepthRangef(0.01, 100.0);checkGlError("glDepthRangef");
+    glViewport(0, 0, width, height);checkGlError("glViewport");
+    glClearColor(0.0,0.0,0.0,0.0); checkGlError("glClearColor");
     glClear( GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT); checkGlError("glClear");
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glDisable(GL_BLEND);checkGlError("glEnable Blend");
+    glEnable(GL_DEPTH_TEST);
     glDrawElements(GL_TRIANGLE_STRIP, INDEX_COUNT, GL_UNSIGNED_SHORT, 0); checkGlError("glDrawElements");
 
 }
@@ -365,7 +370,7 @@ void renderFrame() {
 		"const vec4 c_red = vec4(1.0,0.0,0.0,1.0);" \
 		"const vec4 c_green = vec4(0.0,1.0,0.0,1.0);" \
 		"const vec4 c_blue = vec4(0.0,0.0,1.0,1.0);" \
-		"const vec4 c_ambient = vec4(0.5,0.45,0.15,1.0);" \
+		"const vec4 c_ambient = vec4(1.0,0.75,0.5,1.0);" \
 		"const vec4 c_transparent = vec4(0.0,0.0,0.0,0.0);" \
 		"const vec4 c_fog = vec4(0.3, 0.06, 0.01, 0.0);" \
 	    "uniform bool u_phase;" \

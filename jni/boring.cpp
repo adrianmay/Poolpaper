@@ -55,6 +55,12 @@ void Matrix::stretch(GLfloat x, GLfloat y, GLfloat z)
 		e[2][col]*=z;
 	}
 }
+void Matrix::trans(GLfloat x, GLfloat y, GLfloat z)
+{
+	e[0][3]=x;
+	e[1][3]=y;
+	e[2][3]=z;
+}
 
 
 void printGLString(const char *name, GLenum s) {

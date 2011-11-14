@@ -52,4 +52,5 @@ struct Matrix
 	void pers(float dist);
 	void premul(Matrix & pre);
 	void stretch(GLfloat x, GLfloat y, GLfloat z);
+	void trans(GLfloat x, GLfloat y, GLfloat z);
 };
