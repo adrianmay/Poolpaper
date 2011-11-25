@@ -16,7 +16,7 @@ import android.opengl.GLUtils;
  
 import com.didlio.android.poolpaper.*;   
                         
-    
+     
                                                                  
 public class PoolpaperRenderer implements GLSurfaceView.Renderer {        
                                                                                                    
@@ -27,17 +27,17 @@ public class PoolpaperRenderer implements GLSurfaceView.Renderer {
     }                                                                  
       
     public void onSurfaceChanged(GL10 gl, int width, int height) {        
-        C.init(width, height);        
+        C.init(width, height);          
     }                                     
         
-    public void onSurfaceCreated(GL10 gl, EGLConfig config) {           
+    public void onSurfaceCreated(GL10 gl, EGLConfig config) {             
         C.bitmap(0, loadCubeTexture(gl, service, new int [] {        
-        		R.drawable.chess,
-        		R.drawable.chess,                      
-        		R.drawable.chess,                  
-        		R.drawable.chess,
-        		R.drawable.chess,               
-        		R.drawable.chess           
+        		R.drawable.olyjack_touched_512,
+        		R.drawable.chess_blue,                       
+        		R.drawable.chess_blue,                                  
+        		R.drawable.chess_blue,   
+        		R.drawable.chess_blue,                
+        		R.drawable.olyjack_touched_512 
         		/*                  
         		R.drawable.bot,
         		R.drawable.fro,
@@ -128,7 +128,7 @@ public class PoolpaperRenderer implements GLSurfaceView.Renderer {
             gl.glBindTexture(GL11ExtensionPack.GL_TEXTURE_CUBE_MAP, id);                                              
             mipMap(gl, bmp, roles[i]);  
         }
-                          
+                              
         return id;                          
     }  
   

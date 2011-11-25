@@ -12,7 +12,6 @@
  * Manual fly/zoom
  *
  */
-
 #include "header.h"
 int bitmap_ids[5];
 GLfloat width, height;
@@ -43,8 +42,8 @@ const int VERTEX_GAPS=128;
 const GLfloat VERTEX_PLANE_WIDTH = 1.0f;
 const int CAUSTURE_RES=128;
 
-GLfloat eye_long = 145*3.14159/180.0;
-GLfloat eye_lat = 15*3.14159/180.0;
+GLfloat eye_long =135*3.14159/180.0;
+GLfloat eye_lat = 13.5*3.14159/180.0;
 GLfloat eye_dist = 0.5;
 GLfloat zoom = 5.0;
 //GLfloat eye_long = 0.0;
@@ -243,9 +242,9 @@ bool setupGraphics(int w, int h) {
     init_vertices();
 
 	update_eye_cartesian();
-    sun.x = -eye.x-0.15;
-    sun.y = -eye.y;
-    sun.z = eye.z;
+    sun.x = -12;
+    sun.y = 10;
+    sun.z = 5;
     float sunmag = sqrt ( sun.x*sun.x + sun.y*sun.y + sun.z*sun.z );
     sun.x/=sunmag;
     sun.y/=sunmag;
