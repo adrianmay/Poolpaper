@@ -19,7 +19,7 @@
 
 #define GL_TEXTURE_WRAP_R 0x8072
 bool setupGraphics(int w, int h);
-void renderFrame();
+void renderFrame(long when);
 void bitmap(int which, int id);
 
 
@@ -37,6 +37,8 @@ struct Vec3 {
 	GLfloat x;
 	GLfloat y;
 	GLfloat z;
+	Vec3(float x_, float y_, float z_):x(x_),y(y_),z(z_) {}
+	Vec3(){}
 };
 
 
@@ -53,4 +55,5 @@ struct Matrix
 	void premul(Matrix & pre);
 	void stretch(GLfloat x, GLfloat y, GLfloat z);
 	void trans(GLfloat x, GLfloat y, GLfloat z);
+	void squelch(GLfloat x, GLfloat y, GLfloat z);
 };

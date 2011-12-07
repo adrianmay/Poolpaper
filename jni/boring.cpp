@@ -62,6 +62,13 @@ void Matrix::trans(GLfloat x, GLfloat y, GLfloat z)
 	e[2][3]=z;
 }
 
+void Matrix::squelch(GLfloat x, GLfloat y, GLfloat z)
+{
+	e[0][0]=x;
+	e[1][1]=y;
+	e[2][2]=z;
+}
+
 
 void printGLString(const char *name, GLenum s) {
     const char *v = (const char *) glGetString(s);
@@ -143,7 +150,7 @@ GLuint createProgram(const char* pVertexSource, const char* pFragmentSource) {
 
 extern "C" {
     JNIEXPORT void JNICALL Java_com_didlio_android_poolpaper_C_init(JNIEnv * env, jobject obj,  jint width, jint height);
-    JNIEXPORT void JNICALL Java_com_didlio_android_poolpaper_C_step(JNIEnv * env, jobject obj);
+    JNIEXPORT void JNICALL Java_com_didlio_android_poolpaper_C_step(JNIEnv * env, jobject obj, jlong when);
     JNIEXPORT void JNICALL Java_com_didlio_android_poolpaper_C_bitmap(JNIEnv * env, jobject obj, jint which, jint id);
 };
 
@@ -154,9 +161,9 @@ JNIEXPORT void JNICALL Java_com_didlio_android_poolpaper_C_init(JNIEnv * env, jo
     setupGraphics(width, height);
 }
 
-JNIEXPORT void JNICALL Java_com_didlio_android_poolpaper_C_step(JNIEnv * env, jobject obj)
+JNIEXPORT void JNICALL Java_com_didlio_android_poolpaper_C_step(JNIEnv * env, jobject obj, jlong when)
 {
-    renderFrame();
+    renderFrame(when);
 }
 
 JNIEXPORT void JNICALL Java_com_didlio_android_poolpaper_C_bitmap(JNIEnv * env, jobject obj, jint which, jint id)

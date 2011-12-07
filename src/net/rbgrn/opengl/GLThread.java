@@ -201,6 +201,7 @@ class GLThread extends Thread {
 				/*
 				 * Handle queued events
 				 */
+				/*
 				if (eventsWaiting) {
 					Runnable r;
 					while ((r = this.getEvent()) != null) {
@@ -212,7 +213,7 @@ class GLThread extends Thread {
 					// Go back and see if we need to wait to render.
 					continue;
 				}
-
+*/
 				if (needStart) {
 					tellRendererSurfaceCreated = true;
 					changed = true;
@@ -353,6 +354,7 @@ class GLThread extends Thread {
 	 * @param r
 	 *            the runnable to be run on the GL rendering thread.
 	 */
+	/*
 	public void queueEvent(final Runnable r) {
 		synchronized (this) {
 			this.mEventQueue.add(r);
@@ -362,7 +364,6 @@ class GLThread extends Thread {
 			}
 		}
 	}
-
 	private Runnable getEvent() {
 		synchronized (this) {
 			if (this.mEventQueue.size() > 0) {
@@ -372,6 +373,7 @@ class GLThread extends Thread {
 		}
 		return null;
 	}
+*/
 
 	// ===========================================================
 	// Inner and Anonymous Classes

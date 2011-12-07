@@ -1,5 +1,11 @@
 
 /*
+ *
+ * X points right
+ * Y points to top of screen
+ * Z points into screen away from eye
+ * dont care what it says on the web
+ *
  * TODO:
  * Walls
  * Memory mapping
@@ -35,40 +41,54 @@ struct Vertex {
 	GLfloat concentration;
 };
 
-#define PLOP_HEIGHT 0.002
-#define PLOP_WIDTH 1.0
+#define PLOP_HEIGHT 0.0025
+#define PLOP_WIDTH 2.5
 
-const int VERTEX_GAPS=128;
+const int VERTEX_GAPS=80;
 const GLfloat VERTEX_PLANE_WIDTH = 1.0f;
 const int CAUSTURE_RES=128;
 
-GLfloat eye_long =135*3.14159/180.0;
-GLfloat eye_lat = 13.5*3.14159/180.0;
-GLfloat eye_dist = 0.5;
-GLfloat zoom = 5.0;
+GLfloat eye_long =300.0*3.14159/180.0;
+GLfloat eye_lat = 15.5*3.14159/180.0; //8.5
+
+GLfloat eye_dist = 0.6;
+GLfloat zoom = 3.5;
 //GLfloat eye_long = 0.0;
 //GLfloat eye_lat = 3.14159/2.0;
 //GLfloat eye_dist = 1.0;
 Vec3 eye;
-Vec3 sun;
+Vec3 sun=Vec3(10.0,10.0,-7.0);
 
-#define VERTEX_COUNT (VERTEX_GAPS+1)*(VERTEX_GAPS+1)
-#define INDEX_COUNT 2*(VERTEX_GAPS*(VERTEX_GAPS+2)-1)
+
+#define VERTEX_COUNT_SURF ((VERTEX_GAPS+1)*(VERTEX_GAPS+1))
+#define VERTEX_COUNT_EXTRA 4
+#define INDEX_COUNT_SURF (2*(VERTEX_GAPS*(VERTEX_GAPS+2)-1))
+#define INDEX_COUNT_EXTRA 14
+#define VERTEX_COUNT_ALL (VERTEX_COUNT_SURF+VERTEX_COUNT_EXTRA)
+#define INDEX_COUNT_ALL (INDEX_COUNT_SURF+INDEX_COUNT_EXTRA)
 #define GAP_WIDTH (VERTEX_PLANE_WIDTH/VERTEX_GAPS)
 
-Vertex vertices[VERTEX_GAPS+1][VERTEX_GAPS+1];
-GLushort indices[INDEX_COUNT];
+//Vertex vertices[VERTEX_GAPS+1][VERTEX_GAPS+1];
+struct _ver {
+	Vertex ices[VERTEX_GAPS+1][VERTEX_GAPS+1];
+	Vertex ners[VERTEX_COUNT_EXTRA];
+} ver;
+
+#define vertices ver.ices
+#define verners ver.ners
+
+GLushort indices[INDEX_COUNT_ALL];
 GLfloat velocities[VERTEX_GAPS+1][VERTEX_GAPS+1];
 
 GLfloat matrix[16];
 
 void update_eye_cartesian()
 {
-	eye.z = eye_dist * sin(eye_lat);
+	eye.z = -eye_dist * sin(eye_lat);
 	GLfloat temp = eye_dist * cos(eye_lat);
 	eye.x = temp * sin(eye_long);
 	eye.y = -temp * cos(eye_long);
-	Matrix m_tot, m_rot_x, m_rot_z, m_pers, m_scale, m_trans;
+	Matrix m_tot, m_rot_x, m_rot_z, m_rot_y, m_pers, m_scale, m_trans, m_squelch;
 
 	m_rot_z.rot_z(-eye_long);
 	m_rot_x.rot_x(3.14159/2.0-eye_lat);
@@ -78,11 +98,17 @@ void update_eye_cartesian()
 	m_pers.pers(eye_dist);
 	m_tot.premul(m_pers);
 
-	m_trans.trans(0.0,0.07,0.0);
+
+	float av = (height+width)/2.0;
+
+	m_squelch.squelch(zoom*height/av, zoom*width/av,0.01);
+	m_tot.premul(m_squelch);
+
+	m_trans.trans(0.0,0.55,0.0);
 	m_tot.premul(m_trans);
 
-	m_scale.stretch(zoom*height/width, zoom, 1.0);
-	m_tot.premul(m_scale);
+//	m_scale.stretch(zoom*height/width, zoom, 1.0);
+//	m_tot.premul(m_scale);
 
 	m_tot.transpose_out(matrix);
 	//velocities[(int)(VERTEX_GAPS/2 + eye.x/3.0*VERTEX_GAPS/VERTEX_PLANE_WIDTH)][(int)(VERTEX_GAPS/2 + eye.y/3.0*VERTEX_GAPS/VERTEX_PLANE_WIDTH)] +=0.1;
@@ -90,7 +116,7 @@ void update_eye_cartesian()
 
 void move_eye()
 {
-	//return;
+//	return;
 	eye_long-=0.0025;
 	//eye_lat+=0.001;
 	update_eye_cartesian();
@@ -129,11 +155,13 @@ void init_vertices()
            vertices[x][y].norm.y=0;
            velocities[x][y]=0.0;
        }
-   for (i=0;i<25;i++)
+
+   for (i=0;i<50;i++)
    {
 	   plop(1.0);
 	   plop(0.5);
    }
+
    i=0;
 
     for (x=0;x<VERTEX_GAPS;x++)
@@ -148,12 +176,60 @@ void init_vertices()
     	if (x!=VERTEX_GAPS-1)
     		indices[i++]=(x+1)*(VERTEX_GAPS+1)+y-1;
     }
+
+    for (x=0;x<VERTEX_COUNT_EXTRA;x++)
+    {
+        verners[x].pos.x = -0.5 + (float)(x/2);
+        verners[x].pos.y = -0.5 + (float)(x%2);
+        verners[x].pos.z = 0.5;
+        verners[x].norm.x=0;
+        verners[x].norm.y=0;
+    }
+    /*
+    verners[0].pos.x = -0.1;
+    verners[0].pos.y = 0.0;
+    verners[0].pos.z = 0.0;
+    verners[1].pos.x = 0.1;
+    verners[1].pos.y = 0.0;
+    verners[1].pos.z = 0.0;
+    verners[2].pos.x = 0.0;
+    verners[2].pos.y = 0.5;
+    verners[2].pos.z = 0.0;
+    verners[3].pos.x = 0.0;
+    verners[3].pos.y = 0.0;
+    verners[3].pos.z = 0.1;
+
+
+    indices[i++] = VERTEX_COUNT_SURF;
+//    indices[i++] = -1 + VERTEX_COUNT_SURF;
+    indices[i++] = 1 + VERTEX_COUNT_SURF;
+    indices[i++] = 2 + VERTEX_COUNT_SURF;
+    indices[i++] = 3 + VERTEX_COUNT_SURF;
+    indices[i++] = 0 + VERTEX_COUNT_SURF;
+    indices[i++] = 1 + VERTEX_COUNT_SURF;
+    */
+    indices[i++] = indices[INDEX_COUNT_SURF-1];
+    indices[i++] = 3 + VERTEX_COUNT_SURF;
+    indices[i++] = (VERTEX_GAPS+1)*VERTEX_GAPS;
+    indices[i++] = 2 + VERTEX_COUNT_SURF;
+    indices[i++] = 0;
+    indices[i++] = 0 + VERTEX_COUNT_SURF;
+    indices[i++] = VERTEX_GAPS;
+    indices[i++] = 1 + VERTEX_COUNT_SURF;
+    indices[i++] = indices[INDEX_COUNT_SURF-1];
+    indices[i++] = 3 + VERTEX_COUNT_SURF;
+    indices[i++] = 3 + VERTEX_COUNT_SURF;
+    indices[i++] = 1 + VERTEX_COUNT_SURF;
+    indices[i++] = 2 + VERTEX_COUNT_SURF;
+    indices[i++] = 0 + VERTEX_COUNT_SURF;
+
 }
 
-void adjust_vertices()
+
+void adjust_vertices(long when)
 {
+
    int x,y,i;
-   //plop();
    for (x=1;x<VERTEX_GAPS;x++)
 	   for (y=1;y<VERTEX_GAPS;y++)
 		   vertices[x][y].pos.z += velocities[x][y];
@@ -166,7 +242,7 @@ void adjust_vertices()
 				   vertices[x+1][y].pos.z +
 				   vertices[x-1][y].pos.z
 			   ) - 4.0*vertices[x][y].pos.z;
-		   velocities[x][y] += force/2.0;
+		   velocities[x][y] += force/2.0 ;
 		   //velocities[x][y] *= 0.999;
 	   }
 /*
@@ -194,7 +270,7 @@ void adjust_vertices()
 	   {
 		   float delnormx = ( vertices[x+1][y].norm.x - vertices[x-1][y].norm.x ) / (2*GAP_WIDTH);
 		   float delnormy = ( vertices[x][y+1].norm.y - vertices[x][y-1].norm.y ) / (2*GAP_WIDTH);
-		   vertices[x][y].concentration = (1.0-delnormx/6.0)*(1.0-delnormy/6.0);//depth
+		   vertices[x][y].concentration =(1.0-delnormx/6.0)*(1.0-delnormy/6.0);//depth
 	   }
    for (i=0;i<VERTEX_GAPS+1;i++)
    {
@@ -242,9 +318,6 @@ bool setupGraphics(int w, int h) {
     init_vertices();
 
 	update_eye_cartesian();
-    sun.x = -12;
-    sun.y = 10;
-    sun.z = 5;
     float sunmag = sqrt ( sun.x*sun.x + sun.y*sun.y + sun.z*sun.z );
     sun.x/=sunmag;
     sun.y/=sunmag;
@@ -265,7 +338,7 @@ bool setupGraphics(int w, int h) {
     glGenBuffers(2, vboIds);
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vboIds[1]);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLushort) * INDEX_COUNT, indices, GL_DYNAMIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLushort) * INDEX_COUNT_ALL, indices, GL_DYNAMIC_DRAW);
 
     getLocations();
 
@@ -291,15 +364,15 @@ bool setupGraphics(int w, int h) {
 }
 
 
-void renderFrame() {
-	adjust_vertices();
+void renderFrame(long when) {
+	adjust_vertices(when);
 	move_eye();
 
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
 
-    glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex)*VERTEX_COUNT, vertices, GL_DYNAMIC_DRAW); checkGlError("glBufferData GL_ARRAY_BUFFER");
+    glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex)*VERTEX_COUNT_ALL, vertices, GL_DYNAMIC_DRAW); checkGlError("glBufferData GL_ARRAY_BUFFER");
 
     //caustics pass
 
@@ -320,7 +393,7 @@ void renderFrame() {
     glBlendFunc(GL_ONE, GL_ONE);checkGlError("glBlendFunc");
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glDrawElements(GL_TRIANGLE_STRIP, INDEX_COUNT, GL_UNSIGNED_SHORT, 0); checkGlError("glDrawElements Caustics");
+    glDrawElements(GL_TRIANGLE_STRIP, INDEX_COUNT_SURF, GL_UNSIGNED_SHORT, 0); checkGlError("glDrawElements Caustics");
     glDisable(GL_BLEND);
 
     //main pass
@@ -345,7 +418,6 @@ void renderFrame() {
 
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-//    glDepthRangef(0.01, 100.0);checkGlError("glDepthRangef");
     glViewport(0, 0, width, height);checkGlError("glViewport");
     glClearColor(0.0,0.0,0.0,0.0); checkGlError("glClearColor");
     glClear( GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT); checkGlError("glClear");
@@ -353,7 +425,8 @@ void renderFrame() {
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glDisable(GL_BLEND);checkGlError("glEnable Blend");
     glEnable(GL_DEPTH_TEST);
-    glDrawElements(GL_TRIANGLE_STRIP, INDEX_COUNT, GL_UNSIGNED_SHORT, 0); checkGlError("glDrawElements");
+    glDepthRangef(0.0, 0.1);
+    glDrawElements(GL_TRIANGLE_STRIP, INDEX_COUNT_ALL, GL_UNSIGNED_SHORT, 0); checkGlError("glDrawElements");
 
 }
 //"const vec4 c_ambient = vec4(1.5,1.0,0.5,1.0);" \
@@ -399,7 +472,7 @@ char gVertexMain[] =
 	"{"
 	"  float signx = (to.x>0.0) ? 1.0 : -1.0;"
 	"  float signy = (to.y>0.0) ? 1.0 : -1.0;"
-	"  vec3 tocorner = vec3( signx*0.5 , signy*0.5 , -u_depth ) - from;"
+	"  vec3 tocorner = vec3( signx*0.5 , signy*0.5 , u_depth ) - from;"
 	"  vec3 divi = tocorner/to;"
 	"  if (divi.x > divi.y)"
 	"  {" //front or back
@@ -410,7 +483,7 @@ char gVertexMain[] =
 	"     }"
 	"     else"
 	"     {"
-	"       splat = vec3(from.xy + (divi.z)*to.xy, -u_depth);"
+	"       splat = vec3(from.xy + (divi.z)*to.xy, u_depth);"
 	"     }"
 	"  }"
 	"  else"
@@ -421,7 +494,7 @@ char gVertexMain[] =
 	"     }"
 	"     else"
 	"     {"
-	"       splat = vec3(from.xy + (divi.z)*to.xy, -u_depth);"
+	"       splat = vec3(from.xy + (divi.z)*to.xy, u_depth);"
 	"     }"
 	"  }"
 	"}"
@@ -442,23 +515,25 @@ char gVertexMain[] =
 	"  float water, t;"
 	"  vec3 dummy;"
     "  gl_Position = u_trans * vec4(a_position, 1.0);"
-    "  v_normal.x = a_normal.x;"
-    "  v_normal.y = a_normal.y;"
-    "  v_normal.z = c_one;"
+//    "  gl_Position.z /= 100.0;"
+    "  v_normal.x = -a_normal.x;"
+    "  v_normal.y = -a_normal.y;"
+    "  v_normal.z = -c_one;"
     "  v_normal = normalize(v_normal);"
 	"  fresnel(normalize(a_position - u_eyepos), v_normal, 0.75, v_reflect, v_refract, v_r, t);"
 //	"  v_shine = c_black;"
 	"  findsplat(a_position, v_refract, v_splat);"
-	"  v_shine = (dot(u_sunpos,v_reflect) >= u_sunsize) ? c_white : c_ambient*v_r ;"
+	"  v_shine = (dot(u_sunpos,vec3(abs(v_reflect.x),abs(v_reflect.y),v_reflect.z)) >= u_sunsize) ? c_white : c_ambient*v_r ;"
 	"  water = length(v_splat - a_position);"
 	"  v_fog = exp(-c_fog*water*3.0);"
-	"  v_fog.w = 1.0; "
 	"  v_fog = v_fog * t;"
+	"  v_fog.w = 1.0; "
 //	"  v_causcol = texture2D(u_causture, vec2(v_splat.x+0.5, v_splat.y+0.5));"
 	"  water = v_splat.y;"
 	"  v_splat.y = -v_splat.z;"
 	"  v_splat.z = water;"
 	"  v_causlookup = vec2((v_splat.x-v_splat.y*0.1)*0.85+0.5, (v_splat.z-v_splat.y*0.1)*0.85+0.5);"
+//	"  v_splat=a_position;"
     "}"
 	;
 
@@ -470,6 +545,8 @@ char gFragmentMain[] =
     "    vec4 cubecol = (textureCube(u_texture, v_splat)+0.25)*0.8;"
 	"    vec4 causcol = texture2D(u_causture, v_causlookup);"
 	"    gl_FragColor =  v_shine + cubecol*v_fog*mix(0.825, causcol.r, v_splat.y*2.0);"
+//	"    gl_FragColor = vec4(0.5+v_splat.x*5.0,0.5,10.0*v_splat.z,1.0) ;"
+//	"    //cubecol*v_fog;"
     "}"
 
 	;
@@ -486,8 +563,8 @@ char gVertexCaustics[] =
 	DECLS_CAUSTICS
 
     "void main() {"
-    "  v_position = a_position - 0.1667* vec3(a_normal, 0.0);"
-    "  gl_Position = vec4(2.0*v_position.x, 2.0*v_position.y, 0.0, 1.0);"
+    "  v_position = a_position + 0.1667* vec3(a_normal, 0.0);"
+    "  gl_Position = vec4(v_position.x*2.0, v_position.y*2.0, 0.0, 1.0);"
     "  v_concentration  = 0.4+0.85/(1.0+a_concentration);"
     "}"
 	;

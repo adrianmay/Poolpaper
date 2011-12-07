@@ -42,7 +42,7 @@ public class GLWallpaperService extends WallpaperService {
 	
 	@Override
 	public void onDestroy() {
-		super.onDestroy();
+		super.onDestroy();    
 	}	
 
 	@Override
@@ -96,9 +96,9 @@ public class GLWallpaperService extends WallpaperService {
 		@Override
 		public void onVisibilityChanged(final boolean visible) {
 			if (visible) {
-				this.onResume();
+				this.onResume();    
 			} else {
-				this.onPause();
+				this.onPause();             
 			}
 			super.onVisibilityChanged(visible);
 		}
@@ -106,6 +106,7 @@ public class GLWallpaperService extends WallpaperService {
 		@Override
 		public void onCreate(final SurfaceHolder surfaceHolder) {
 			super.onCreate(surfaceHolder);
+			startForeground(0, null);       
 			// Log.d(TAG, "GLEngine.onCreate()");
 		}
 
@@ -212,11 +213,11 @@ public class GLWallpaperService extends WallpaperService {
 		public void onResume() {
 			this.mGLThread.onResume();
 		}
-
+/*
 		public void queueEvent(final Runnable r) {
 			this.mGLThread.queueEvent(r);
 		}
-
+*/
 		private void checkRenderThreadState() {
 			if (this.mGLThread != null) {
 				throw new IllegalStateException("setRenderer has already been called for this instance.");

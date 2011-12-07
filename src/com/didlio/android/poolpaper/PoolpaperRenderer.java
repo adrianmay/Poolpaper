@@ -13,31 +13,34 @@ import android.graphics.BitmapFactory;
 import android.graphics.Matrix;    
 import android.opengl.GLSurfaceView;      
 import android.opengl.GLUtils;                           
+import android.os.SystemClock;
  
 import com.didlio.android.poolpaper.*;   
                         
-     
+          
                                                                  
 public class PoolpaperRenderer implements GLSurfaceView.Renderer {        
                                                                                                    
 	private PoolpaperService service; 
 	public PoolpaperRenderer(PoolpaperService s) {service=s;}
-    public void onDrawFrame(GL10 gl) {                                     
-        C.step();              
+    public void onDrawFrame(GL10 gl) {                                    
+    	                                    
+        C.step(SystemClock.elapsedRealtime());                  
     }                                                                  
       
     public void onSurfaceChanged(GL10 gl, int width, int height) {        
         C.init(width, height);          
     }                                     
         
-    public void onSurfaceCreated(GL10 gl, EGLConfig config) {             
+    public void onSurfaceCreated(GL10 gl, EGLConfig config) {                         
         C.bitmap(0, loadCubeTexture(gl, service, new int [] {        
-        		R.drawable.olyjack_touched_512,
-        		R.drawable.chess_blue,                       
-        		R.drawable.chess_blue,                                  
-        		R.drawable.chess_blue,   
+        		//R.drawable.olyjack_touched_512,
+        		R.drawable.olydiagcol, 
         		R.drawable.chess_blue,                
-        		R.drawable.olyjack_touched_512 
+        		R.drawable.chess_blue,                                  
+        		R.drawable.chess_blue,    
+        		R.drawable.chess_blue,                
+        		R.drawable.olydiagcol 
         		/*                  
         		R.drawable.bot,
         		R.drawable.fro,
@@ -75,15 +78,15 @@ public class PoolpaperRenderer implements GLSurfaceView.Renderer {
         // This will tell the BitmapFactory to not scale based on the device's pixel density:
         // (Thanks to Matthew Marshall for this bit)
         BitmapFactory.Options opts = new BitmapFactory.Options();
-        opts.inScaled = false;    
-                       
+        opts.inScaled = false;                 
+                                    
         // Load up, and flip the texture:
         Bitmap temp = BitmapFactory.decodeResource(context.getResources(), resource, opts);
         Bitmap bmp = Bitmap.createBitmap(temp, 0, 0, temp.getWidth(), temp.getHeight(), flip, true);
         temp.recycle();           
                                                             
-        gl.glBindTexture(GL10.GL_TEXTURE_2D, id);    
-                                                                            
+        gl.glBindTexture(GL10.GL_TEXTURE_2D, id);         
+                                                                                    
         mipMapBrighter(gl, bmp, GL10.GL_TEXTURE_2D); 
              
              
@@ -103,9 +106,9 @@ public class PoolpaperRenderer implements GLSurfaceView.Renderer {
         // In which ID will we be storing this texture?
         int id = newTextureID(gl);                           
         
-        // We need to flip the textures vertically:                                 
+        // We need to flip the textures vertically:                                                  
         Matrix flip = new Matrix();
-        flip.postScale(1f, -1f);
+        flip.postScale(-1f, -1f);       
          
         // This will tell the BitmapFactory to not scale based on the device's pixel density:
         // (Thanks to Matthew Marshall for this bit)
