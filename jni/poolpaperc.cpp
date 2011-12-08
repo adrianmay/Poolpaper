@@ -44,15 +44,15 @@ struct Vertex {
 #define PLOP_HEIGHT 0.0025
 #define PLOP_WIDTH 2.5
 
-const int VERTEX_GAPS=80;
+const int VERTEX_GAPS=70;
 const GLfloat VERTEX_PLANE_WIDTH = 1.0f;
 const int CAUSTURE_RES=128;
 
 GLfloat eye_long =300.0*3.14159/180.0;
-GLfloat eye_lat = 15.5*3.14159/180.0; //8.5
+GLfloat eye_lat = 14.5*3.14159/180.0; //8.5
 
 GLfloat eye_dist = 0.6;
-GLfloat zoom = 3.5;
+GLfloat zoom = 4.0;
 //GLfloat eye_long = 0.0;
 //GLfloat eye_lat = 3.14159/2.0;
 //GLfloat eye_dist = 1.0;
@@ -264,13 +264,15 @@ void adjust_vertices(long when)
 	   {
 		   vertices[x][y].norm.x = ( vertices[x-1][y].pos.z - vertices[x+1][y].pos.z ) / (2*GAP_WIDTH);
 		   vertices[x][y].norm.y = ( vertices[x][y-1].pos.z - vertices[x][y+1].pos.z ) / (2*GAP_WIDTH);
+		   //these point down towards +ve z
 	   }
    for (x=1;x<VERTEX_GAPS;x++)
 	   for (y=1;y<VERTEX_GAPS;y++)
 	   {
 		   float delnormx = ( vertices[x+1][y].norm.x - vertices[x-1][y].norm.x ) / (2*GAP_WIDTH);
 		   float delnormy = ( vertices[x][y+1].norm.y - vertices[x][y-1].norm.y ) / (2*GAP_WIDTH);
-		   vertices[x][y].concentration =(1.0-delnormx/6.0)*(1.0-delnormy/6.0);//depth
+//		   vertices[x][y].concentration =1.0/(1.0+abs((1.0+delnormx/6.0)*(1.0+delnormy/6.0)));//depth
+		   vertices[x][y].concentration =1.0/(1.05+((1.0+delnormx/5.0)*(1.0+delnormy/5.0)));//depth
 	   }
    for (i=0;i<VERTEX_GAPS+1;i++)
    {
@@ -393,6 +395,7 @@ void renderFrame(long when) {
     glBlendFunc(GL_ONE, GL_ONE);checkGlError("glBlendFunc");
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    //glDisable(GL_DEPTH_TEST);
     glDrawElements(GL_TRIANGLE_STRIP, INDEX_COUNT_SURF, GL_UNSIGNED_SHORT, 0); checkGlError("glDrawElements Caustics");
     glDisable(GL_BLEND);
 
@@ -544,7 +547,8 @@ char gFragmentMain[] =
     "void main() {"
     "    vec4 cubecol = (textureCube(u_texture, v_splat)+0.25)*0.8;"
 	"    vec4 causcol = texture2D(u_causture, v_causlookup);"
-	"    gl_FragColor =  v_shine + cubecol*v_fog*mix(0.825, causcol.r, v_splat.y*2.0);"
+	"    gl_FragColor =  v_shine + cubecol*v_fog*mix(0.825, causcol.r, -v_splat.y*2.0);"
+//	"    gl_FragColor =  v_shine + cubecol*v_fog*causcol.r;"
 //	"    gl_FragColor = vec4(0.5+v_splat.x*5.0,0.5,10.0*v_splat.z,1.0) ;"
 //	"    //cubecol*v_fog;"
     "}"
@@ -565,7 +569,7 @@ char gVertexCaustics[] =
     "void main() {"
     "  v_position = a_position + 0.1667* vec3(a_normal, 0.0);"
     "  gl_Position = vec4(v_position.x*2.0, v_position.y*2.0, 0.0, 1.0);"
-    "  v_concentration  = 0.4+0.85/(1.0+a_concentration);"
+    "  v_concentration  = 0.2+1.0*sqrt(a_concentration);"//0.4+0.85/(1.0+a_concentration);"
     "}"
 	;
 

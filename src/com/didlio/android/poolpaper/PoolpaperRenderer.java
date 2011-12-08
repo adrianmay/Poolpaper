@@ -20,12 +20,13 @@ import com.didlio.android.poolpaper.*;
           
                                                                  
 public class PoolpaperRenderer implements GLSurfaceView.Renderer {        
-                                                                                                   
-	private PoolpaperService service; 
+                                                                   
+	   
+	private PoolpaperService service;      
 	public PoolpaperRenderer(PoolpaperService s) {service=s;}
     public void onDrawFrame(GL10 gl) {                                    
     	                                    
-        C.step(SystemClock.elapsedRealtime());                  
+        C.step(SystemClock.elapsedRealtime());                        
     }                                                                  
       
     public void onSurfaceChanged(GL10 gl, int width, int height) {        
@@ -40,7 +41,7 @@ public class PoolpaperRenderer implements GLSurfaceView.Renderer {
         		R.drawable.chess_blue,                                  
         		R.drawable.chess_blue,    
         		R.drawable.chess_blue,                
-        		R.drawable.olydiagcol 
+        		R.drawable.olydiagcol    
         		/*                  
         		R.drawable.bot,
         		R.drawable.fro,
@@ -157,8 +158,8 @@ public class PoolpaperRenderer implements GLSurfaceView.Renderer {
             bmp = bmp2;
         }             
         bmp.recycle();
-    }
-
+    }              
+ 
     private void mipMapBrighter(GL10 gl, Bitmap bmp, int role)        
     {
         // Generate, and load up all of the mipmaps:
@@ -173,11 +174,11 @@ public class PoolpaperRenderer implements GLSurfaceView.Renderer {
             // Resize, and let's go again:             
             width >>= 1; height >>= 1;
             if(width<1)  width = 1;
-            if(height<1) height = 1;
+            if(height<1) height = 1; 
             
             Bitmap bmp2 = Bitmap.createScaledBitmap(bmp, width, height, true);
             bmp2.eraseColor(Color.rgb((int)brightness*255, (int)brightness*255, (int)brightness*255));
-            bmp.recycle(); 
+            bmp.recycle();                                      
             bmp = bmp2;
         }             
         bmp.recycle();
