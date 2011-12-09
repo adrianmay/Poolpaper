@@ -44,7 +44,7 @@ struct Vertex {
 #define PLOP_HEIGHT 0.0025
 #define PLOP_WIDTH 2.5
 
-const int VERTEX_GAPS=70;
+const int VERTEX_GAPS=64;
 const GLfloat VERTEX_PLANE_WIDTH = 1.0f;
 const int CAUSTURE_RES=128;
 
@@ -269,10 +269,11 @@ void adjust_vertices(long when)
    for (x=1;x<VERTEX_GAPS;x++)
 	   for (y=1;y<VERTEX_GAPS;y++)
 	   {
-		   float delnormx = ( vertices[x+1][y].norm.x - vertices[x-1][y].norm.x ) / (2*GAP_WIDTH);
-		   float delnormy = ( vertices[x][y+1].norm.y - vertices[x][y-1].norm.y ) / (2*GAP_WIDTH);
+		   float g = 12.0*GAP_WIDTH;
+		   float delnormx = ( vertices[x+1][y].norm.x - vertices[x-1][y].norm.x ) / g;
+		   float delnormy = ( vertices[x][y+1].norm.y - vertices[x][y-1].norm.y ) / g;
 //		   vertices[x][y].concentration =1.0/(1.0+abs((1.0+delnormx/6.0)*(1.0+delnormy/6.0)));//depth
-		   vertices[x][y].concentration =(1.0+delnormx/6.0)*(1.0+delnormy/6.0);//depth
+		   vertices[x][y].concentration =(1.0+delnormx)*(1.0+delnormy);//depth
 	   }
    for (i=0;i<VERTEX_GAPS+1;i++)
    {
@@ -569,7 +570,7 @@ char gVertexCaustics[] =
     "void main() {"
     "  v_position = a_position + 0.1667* vec3(a_normal, 0.0);"
     "  gl_Position = vec4(v_position.x*2.0, v_position.y*2.0, 0.0, 1.0);"
-    "  v_concentration  = 0.3+1.1*(1.0/(1.05+a_concentration));"//0.4+0.85/(1.0+a_concentration);"
+    "  v_concentration  = 0.3+1.1/(1.05+a_concentration);"//0.4+0.85/(1.0+a_concentration);"
     "}"
 	;
 
