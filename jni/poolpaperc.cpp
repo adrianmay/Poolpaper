@@ -51,8 +51,8 @@ const int CAUSTURE_RES=128;
 GLfloat eye_long =300.0*3.14159/180.0;
 GLfloat eye_lat = 14.5*3.14159/180.0; //8.5
 
-GLfloat eye_dist = 0.6;
-GLfloat zoom = 4.0;
+GLfloat eye_dist = 1.0;
+GLfloat zoom = 6.0;
 //GLfloat eye_long = 0.0;
 //GLfloat eye_lat = 3.14159/2.0;
 //GLfloat eye_dist = 1.0;
