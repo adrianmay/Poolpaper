@@ -168,7 +168,7 @@ public class PoolpaperRenderer implements GLSurfaceView.Renderer {
             // Push the bitmap onto the GPU:
             GLUtils.texImage2D(role, level, bmp, 0);   
             
-            // We need to stop when the texture is 1x1:   
+            // We need to stop when the texture is 1x1:              
             if(height==1 && width==1) break;    
             
             // Resize, and let's go again:             
