@@ -21,6 +21,7 @@
 #include "header.h"
 int bitmap_ids[5];
 GLfloat width, height;
+#define float double
 void bitmap(int which, int id)
 {
 	LOGI("bitmap\n");
@@ -44,15 +45,15 @@ struct Vertex {
 #define PLOP_HEIGHT 0.0025
 #define PLOP_WIDTH 2.5
 
-const int VERTEX_GAPS=64;
+const int VERTEX_GAPS=64.0;
 const GLfloat VERTEX_PLANE_WIDTH = 1.0f;
-const int CAUSTURE_RES=128;
+const int CAUSTURE_RES=256.0;
 
-GLfloat eye_long =300.0*3.14159/180.0;
-GLfloat eye_lat = 14.5*3.14159/180.0; //8.5
+GLfloat eye_long;
+GLfloat eye_lat;
 
-GLfloat eye_dist = 1.0;
-GLfloat zoom = 6.0;
+GLfloat eye_dist = 0.6;
+GLfloat zoom = 4.0;
 //GLfloat eye_long = 0.0;
 //GLfloat eye_lat = 3.14159/2.0;
 //GLfloat eye_dist = 1.0;
@@ -143,23 +144,25 @@ void plop(float width)
 
 void init_vertices()
 {
+	eye_long =300.0*3.14159/180.0;
+	eye_lat = 14.5*3.14159/180.0; //8.5
 
    int x,y,i;
    for (x=0;x<VERTEX_GAPS+1;x++)
        for (y=0;y<VERTEX_GAPS+1;y++)
        {
-           vertices[x][y].pos.x=((GLfloat)(x-VERTEX_GAPS/2))*GAP_WIDTH;
-           vertices[x][y].pos.y=((GLfloat)(y-VERTEX_GAPS/2))*GAP_WIDTH;
+           vertices[x][y].pos.x=((GLfloat)(x-VERTEX_GAPS/2.0))*GAP_WIDTH;
+           vertices[x][y].pos.y=((GLfloat)(y-VERTEX_GAPS/2.0))*GAP_WIDTH;
            vertices[x][y].pos.z=0.0f;
-           vertices[x][y].norm.x=0;
-           vertices[x][y].norm.y=0;
+           vertices[x][y].norm.x=0.0;
+           vertices[x][y].norm.y=0.0;
            velocities[x][y]=0.0;
        }
 
    for (i=0;i<50;i++)
    {
 	   plop(1.0);
-	   plop(0.5);
+	   plop(0.66);
    }
 
    i=0;
@@ -182,8 +185,8 @@ void init_vertices()
         verners[x].pos.x = -0.5 + (float)(x/2);
         verners[x].pos.y = -0.5 + (float)(x%2);
         verners[x].pos.z = 0.5;
-        verners[x].norm.x=0;
-        verners[x].norm.y=0;
+        verners[x].norm.x=0.0;
+        verners[x].norm.y=0.0;
     }
     /*
     verners[0].pos.x = -0.1;
@@ -242,7 +245,7 @@ void adjust_vertices(long when)
 				   vertices[x+1][y].pos.z +
 				   vertices[x-1][y].pos.z
 			   ) - 4.0*vertices[x][y].pos.z;
-		   velocities[x][y] += force/2.0 ;
+		   velocities[x][y] += force/2.5 ;
 		   //velocities[x][y] *= 0.999;
 	   }
 /*
@@ -262,8 +265,8 @@ void adjust_vertices(long when)
    for (x=1;x<VERTEX_GAPS;x++)
 	   for (y=1;y<VERTEX_GAPS;y++)
 	   {
-		   vertices[x][y].norm.x = ( vertices[x-1][y].pos.z - vertices[x+1][y].pos.z ) / (2*GAP_WIDTH);
-		   vertices[x][y].norm.y = ( vertices[x][y-1].pos.z - vertices[x][y+1].pos.z ) / (2*GAP_WIDTH);
+		   vertices[x][y].norm.x = ( vertices[x-1][y].pos.z - vertices[x+1][y].pos.z ) / (2.0*GAP_WIDTH);
+		   vertices[x][y].norm.y = ( vertices[x][y-1].pos.z - vertices[x][y+1].pos.z ) / (2.0*GAP_WIDTH);
 		   //these point down towards +ve z
 	   }
    for (x=1;x<VERTEX_GAPS;x++)
@@ -389,7 +392,9 @@ void renderFrame(long when) {
     glEnableVertexAttribArray(gvConcentrationCaustics); checkGlError("glEnableVertexAttribArray gvConcentrationCaustics");
     glVertexAttribPointer(gvConcentrationCaustics, 1, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void*)(5*sizeof(GLfloat))); checkGlError("glVertexAttribPointer");
     glBindFramebuffer(GL_FRAMEBUFFER, gvFrameBuffer);
+//    glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glViewport(0, 0, CAUSTURE_RES, CAUSTURE_RES);
+//    glViewport(0, 0, width, height);
     glClearColor(0.0, 0.0, 0.0, 0.0); checkGlError("glClearColor");
     glClear(GL_COLOR_BUFFER_BIT); checkGlError("glClear");
     glEnable(GL_BLEND);checkGlError("glEnable Blend");
@@ -421,6 +426,7 @@ void renderFrame(long when) {
     glUniform1i ( gvCausture, 1 ); checkGlError("gvSamplerHandle 1");
 
 
+//    glBindFramebuffer(GL_FRAMEBUFFER, gvFrameBuffer);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glViewport(0, 0, width, height);checkGlError("glViewport");
     glClearColor(0.0,0.0,0.0,0.0); checkGlError("glClearColor");
@@ -431,9 +437,36 @@ void renderFrame(long when) {
     glEnable(GL_DEPTH_TEST);
     glDepthRangef(0.0, 0.1);
     glDrawElements(GL_TRIANGLE_STRIP, INDEX_COUNT_ALL, GL_UNSIGNED_SHORT, 0); checkGlError("glDrawElements");
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 }
-//"const vec4 c_ambient = vec4(1.5,1.0,0.5,1.0);" \
+
+
+#define DECLS_CAUSTICS \
+	    "invariant varying highp float v_concentration;" \
+		"invariant varying highp vec3 v_position;"
+
+char gVertexCaustics[] =
+	"attribute vec3 a_position;"
+	"attribute vec2 a_normal;"
+	"attribute float a_concentration;"
+	DECLS_CAUSTICS
+
+    "void main() {"
+    "  v_position = a_position + 0.1667* vec3(a_normal, 0.0);"
+    "  gl_Position = vec4(v_position.x*2.0, v_position.y*2.0, 0.0, 1.0);"
+    "  v_concentration  = 0.3+1.1/(1.05+a_concentration);"
+    "}"
+	;
+
+char gFragmentCaustics[] =
+    "precision highp float;"
+	DECLS_CAUSTICS
+    "void main() {"
+	"    gl_FragColor = vec4(v_concentration, v_concentration, v_concentration, 1.0);"
+    "}"
+	;
+
 
 
 #define DECLS_MAIN \
@@ -457,15 +490,15 @@ void renderFrame(long when) {
 	    "uniform float u_depth;" \
 	    "uniform vec3 u_sunpos;" \
 	    "uniform float u_sunsize;" \
-	    "invariant varying vec3 v_normal;" \
-		"invariant varying vec3 v_reflect;" \
-		"invariant varying vec3 v_refract;" \
-		"invariant varying vec3 v_divi;" \
-	    "invariant varying vec3 v_splat;" \
-	    "invariant varying vec4 v_fog;" \
-	    "invariant varying vec2 v_causlookup;" \
-	    "invariant varying float v_r;" \
-	    "invariant varying vec4 v_shine;"
+	    "invariant varying highp vec3 v_normal;" \
+		"invariant varying highp vec3 v_reflect;" \
+		"invariant varying highp vec3 v_refract;" \
+		"invariant varying highp vec3 v_divi;" \
+	    "invariant varying highp vec3 v_splat;" \
+	    "invariant varying highp vec4 v_fog;" \
+	    "invariant varying highp vec2 v_causlookup;" \
+	    "invariant varying highp float v_r;" \
+	    "invariant varying highp vec4 v_shine;"
 
 char gVertexMain[] =
 	"attribute vec3 a_position;"
@@ -482,7 +515,7 @@ char gVertexMain[] =
 	"  {" //front or back
 	"     if (divi.z > divi.y)"
 	"     {"
-	"       vec2 temp = ( from.xz + (divi.y)*to.xz );"
+	"       highp vec2 temp = ( from.xz + (divi.y)*to.xz );"
 	"       splat = vec3(temp.x, signy*0.5, temp.y);"
 	"     }"
 	"     else"
@@ -519,80 +552,33 @@ char gVertexMain[] =
 	"  float water, t;"
 	"  vec3 dummy;"
     "  gl_Position = u_trans * vec4(a_position, 1.0);"
-//    "  gl_Position.z /= 100.0;"
     "  v_normal.x = -a_normal.x;"
     "  v_normal.y = -a_normal.y;"
     "  v_normal.z = -c_one;"
     "  v_normal = normalize(v_normal);"
 	"  fresnel(normalize(a_position - u_eyepos), v_normal, 0.75, v_reflect, v_refract, v_r, t);"
-//	"  v_shine = c_black;"
 	"  findsplat(a_position, v_refract, v_splat);"
 	"  v_shine = (dot(u_sunpos,vec3(abs(v_reflect.x),abs(v_reflect.y),v_reflect.z)) >= u_sunsize) ? c_white : c_ambient*v_r ;"
 	"  water = length(v_splat - a_position);"
 	"  v_fog = exp(-c_fog*water*3.0);"
 	"  v_fog = v_fog * t;"
 	"  v_fog.w = 1.0; "
-//	"  v_causcol = texture2D(u_causture, vec2(v_splat.x+0.5, v_splat.y+0.5));"
 	"  water = v_splat.y;"
 	"  v_splat.y = -v_splat.z;"
 	"  v_splat.z = water;"
 	"  v_causlookup = vec2((v_splat.x-v_splat.y*0.1)*0.85+0.5, (v_splat.z-v_splat.y*0.1)*0.85+0.5);"
-//	"  v_splat=a_position;"
     "}"
 	;
 
 
 char gFragmentMain[] =
-    "precision mediump float;"
+    "precision highp float;"
 	DECLS_MAIN
     "void main() {"
     "    vec4 cubecol = (textureCube(u_texture, v_splat)+0.25)*0.8;"
 	"    vec4 causcol = texture2D(u_causture, v_causlookup);"
-	"    gl_FragColor =  v_shine + cubecol*v_fog*mix(0.825, causcol.r, -v_splat.y*2.0);"
-//	"    gl_FragColor =  v_shine + cubecol*v_fog*causcol.r;"
-//	"    gl_FragColor = vec4(0.5+v_splat.x*5.0,0.5,10.0*v_splat.z,1.0) ;"
-//	"    //cubecol*v_fog;"
+	"    gl_FragColor =  v_shine + cubecol*v_fog*causcol.r;"
     "}"
 
 	;
-
-
-#define DECLS_CAUSTICS \
-	    "invariant varying float v_concentration;" \
-		"invariant varying vec3 v_position;"
-
-char gVertexCaustics[] =
-	"attribute vec3 a_position;"
-	"attribute vec2 a_normal;"
-	"attribute float a_concentration;"
-	DECLS_CAUSTICS
-
-    "void main() {"
-    "  v_position = a_position + 0.1667* vec3(a_normal, 0.0);"
-    "  gl_Position = vec4(v_position.x*2.0, v_position.y*2.0, 0.0, 1.0);"
-    "  v_concentration  = 0.3+1.1/(1.05+a_concentration);"//0.4+0.85/(1.0+a_concentration);"
-    "}"
-	;
-
-char gFragmentCaustics[] =
-    "precision mediump float;"
-	DECLS_CAUSTICS
-    "void main() {"
-//    "    float d = gl_PointCoord.x + gl_PointCoord.y - 2.0;"
-//    "    float c = pow(0.15,1.0+d*d);"
-//	"    gl_FragColor = vec4(c,c,c,1.0);"
-//	"    float brightness = ;"
-	"    gl_FragColor = vec4(v_concentration, v_concentration, v_concentration, 1.0);"//vec4(0.6,0.6,0.6,1.0);"
-    "}"
-	;
-//	"  vec2 texcoord = mod(floor(v_splat * 10.0), 2.0);\n"
-//	"  float delta = abs(texcoord.x - texcoord.y);\n"
-//	"    mix(c_darkblue, c_lightblue, delta);\n"
-//    "  gl_FragColor = v_colour;"
-//	"                ( dot(u_sunpos,v_reflect) >= u_sunsize) ? c_white : "
-//	"                 v_colour + ("
-//	"				    ( mod( (floor(v_splat.x)+floor(v_splat.y)) ,2.0)==0.0 ) ? c_darkblue : c_lightblue);"
-//	"                 vec4(v_splat.x, v_splat.y, 0.0, 1.0);"
-//    "  gl_FragColor.w = 1.0;\n"
-
 

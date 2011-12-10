@@ -70,7 +70,7 @@ public class PoolpaperRenderer implements GLSurfaceView.Renderer {
         gl.glTexParameterf(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_WRAP_T, GL10.GL_REPEAT);
 
         // In which ID will we be storing this texture?
-        int id = newTextureID(gl);       
+        int id = newTextureID(gl);          
         
         // We need to flip the textures vertically:
         Matrix flip = new Matrix();
@@ -90,7 +90,8 @@ public class PoolpaperRenderer implements GLSurfaceView.Renderer {
                                                                                     
         mipMapBrighter(gl, bmp, GL10.GL_TEXTURE_2D); 
              
-             
+                               
+            
         return id;
     }
 
@@ -135,7 +136,7 @@ public class PoolpaperRenderer implements GLSurfaceView.Renderer {
                               
         return id;                          
     }  
-  
+                                     
     private void mipMap(GL10 gl, Bitmap bmp, int role)
     {
         // Generate, and load up all of the mipmaps:
@@ -156,8 +157,8 @@ public class PoolpaperRenderer implements GLSurfaceView.Renderer {
             // bmp2.eraseColor(Color.WHITE);
             bmp.recycle();
             bmp = bmp2;
-        }             
-        bmp.recycle();
+        }               
+        bmp.recycle();             
     }              
  
     private void mipMapBrighter(GL10 gl, Bitmap bmp, int role)        
@@ -166,7 +167,7 @@ public class PoolpaperRenderer implements GLSurfaceView.Renderer {
     	float brightness; int level, height, width;    
         for(level=0, height = bmp.getHeight(), width = bmp.getWidth(), brightness = (float) (1.0/12.0); true; level++, brightness*=1.414) {
             // Push the bitmap onto the GPU:
-            GLUtils.texImage2D(role, level, bmp, 0);   
+            GLUtils.texImage2D(role, level, bmp, 0);     
             
             // We need to stop when the texture is 1x1:                    
             if(height==1 && width==1) break;    
