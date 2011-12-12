@@ -133,10 +133,10 @@ public class PoolpaperRenderer implements GLSurfaceView.Renderer {
             gl.glBindTexture(GL11ExtensionPack.GL_TEXTURE_CUBE_MAP, id);                                              
             mipMap(gl, bmp, roles[i]);  
         }
-                              
-        return id;                          
-    }  
-                                     
+        
+        return id;                                                                
+    }    
+                                                             
     private void mipMap(GL10 gl, Bitmap bmp, int role)
     {
         // Generate, and load up all of the mipmaps:
@@ -157,18 +157,18 @@ public class PoolpaperRenderer implements GLSurfaceView.Renderer {
             // bmp2.eraseColor(Color.WHITE);
             bmp.recycle();
             bmp = bmp2;
-        }               
+        }                 
         bmp.recycle();             
     }              
  
-    private void mipMapBrighter(GL10 gl, Bitmap bmp, int role)        
-    {
-        // Generate, and load up all of the mipmaps:
-    	float brightness; int level, height, width;    
+    private void mipMapBrighter(GL10 gl, Bitmap bmp, int role)                                                        
+    {   
+        // Generate, and load up all of the mipmaps: 
+    	float brightness; int level, height, width;     
         for(level=0, height = bmp.getHeight(), width = bmp.getWidth(), brightness = (float) (1.0/12.0); true; level++, brightness*=1.414) {
             // Push the bitmap onto the GPU:
             GLUtils.texImage2D(role, level, bmp, 0);     
-            
+             
             // We need to stop when the texture is 1x1:                    
             if(height==1 && width==1) break;    
             
@@ -183,5 +183,5 @@ public class PoolpaperRenderer implements GLSurfaceView.Renderer {
             bmp = bmp2;
         }             
         bmp.recycle();
-    }
-}        
+    }           
+}         

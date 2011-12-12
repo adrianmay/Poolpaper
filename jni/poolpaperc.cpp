@@ -1,3 +1,4 @@
+//#define JUSTCAUSTICS
 
 /*
  *
@@ -21,7 +22,7 @@
 #include "header.h"
 int bitmap_ids[5];
 GLfloat width, height;
-#define float double
+//#define float double
 void bitmap(int which, int id)
 {
 	LOGI("bitmap\n");
@@ -46,8 +47,8 @@ struct Vertex {
 #define PLOP_WIDTH 2.5
 
 const int VERTEX_GAPS=64.0;
-const GLfloat VERTEX_PLANE_WIDTH = 1.0f;
-const int CAUSTURE_RES=256.0;
+const GLfloat VERTEX_PLANE_WIDTH = 1.0;
+const int CAUSTURE_RES=512.0;
 
 GLfloat eye_long;
 GLfloat eye_lat;
@@ -153,7 +154,7 @@ void init_vertices()
        {
            vertices[x][y].pos.x=((GLfloat)(x-VERTEX_GAPS/2.0))*GAP_WIDTH;
            vertices[x][y].pos.y=((GLfloat)(y-VERTEX_GAPS/2.0))*GAP_WIDTH;
-           vertices[x][y].pos.z=0.0f;
+           vertices[x][y].pos.z=0.0;
            vertices[x][y].norm.x=0.0;
            vertices[x][y].norm.y=0.0;
            velocities[x][y]=0.0;
@@ -161,8 +162,8 @@ void init_vertices()
 
    for (i=0;i<50;i++)
    {
-	   plop(1.0);
-	   plop(0.66);
+	   plop(3.14159/8.0);
+	   plop(3.14159/4.0);
    }
 
    i=0;
@@ -236,17 +237,69 @@ void adjust_vertices(long when)
    for (x=1;x<VERTEX_GAPS;x++)
 	   for (y=1;y<VERTEX_GAPS;y++)
 		   vertices[x][y].pos.z += velocities[x][y];
+
    for (x=1;x<VERTEX_GAPS;x++)
 	   for (y=1;y<VERTEX_GAPS;y++)
 	   {
-		   GLfloat force = (
+		   vertices[x][y].norm.x = ( vertices[x-1][y].pos.z - vertices[x+1][y].pos.z ) / (2.0*GAP_WIDTH);
+		   vertices[x][y].norm.y = ( vertices[x][y-1].pos.z - vertices[x][y+1].pos.z ) / (2.0*GAP_WIDTH);
+		   //these point down towards +ve z
+	   }
+   for (x=1;x<VERTEX_GAPS;x++)
+	   for (y=1;y<VERTEX_GAPS;y++)
+	   {
+		   float g = 12.0*GAP_WIDTH;
+		   float delnormx = ( vertices[x+1][y].norm.x - vertices[x-1][y].norm.x ) / g;
+		   float delnormy = ( vertices[x][y+1].norm.y - vertices[x][y-1].norm.y ) / g;
+//		   vertices[x][y].concentration =1.0/(1.0+abs((1.0+delnormx/6.0)*(1.0+delnormy/6.0)));//depth
+		   vertices[x][y].concentration = fabs((1.0+delnormx)*(1.0+delnormy));//depth
+	   }
+   /*
+   for (x=1;x<VERTEX_GAPS;x++)
+	   for (y=1;y<VERTEX_GAPS;y++)
+		   vertices[x][y].concentration = 0.33*(vertices[x][y].concentration + 2.0*vertices[x+1][y].concentration);
+   for (y=1;y<VERTEX_GAPS;y++)
+	   for (x=1;x<VERTEX_GAPS;x++)
+		   vertices[x][y].concentration = 0.33*(vertices[x][y].concentration + 2.0*vertices[x][y+1].concentration);
+
+   for (x=VERTEX_GAPS-1;x>0;x--)
+	   for (y=1;y<VERTEX_GAPS;y++)
+		   vertices[x][y].concentration = 0.33*(vertices[x][y].concentration + 2.0*vertices[x-1][y].concentration);
+   for (y=VERTEX_GAPS-1;y>0;y--)
+	   for (x=1;x<VERTEX_GAPS;x++)
+		   vertices[x][y].concentration = 0.33*(vertices[x][y].concentration + 2.0*vertices[x][y-1].concentration);
+*/
+   for (i=0;i<VERTEX_GAPS+1;i++)
+   {
+	   vertices[0][i].norm.x = vertices[1][i].norm.x;
+	   vertices[0][i].norm.y = vertices[1][i].norm.y;
+	   vertices[VERTEX_GAPS][i].norm.x = vertices[VERTEX_GAPS-1][i].norm.x;
+	   vertices[VERTEX_GAPS][i].norm.y = vertices[VERTEX_GAPS-1][i].norm.y;
+	   vertices[i][0].norm.x = vertices[i][1].norm.x;
+	   vertices[i][0].norm.y = vertices[i][1].norm.y;
+	   vertices[i][VERTEX_GAPS].norm.x = vertices[i][VERTEX_GAPS-1].norm.x;
+	   vertices[i][VERTEX_GAPS].norm.y = vertices[i][VERTEX_GAPS-1].norm.y;
+
+   }
+
+   for (x=1;x<VERTEX_GAPS;x++)
+	   for (y=1;y<VERTEX_GAPS;y++)
+	   {
+		   GLfloat neighbours = (
 				   vertices[x][y+1].pos.z +
 				   vertices[x][y-1].pos.z +
 				   vertices[x+1][y].pos.z +
 				   vertices[x-1][y].pos.z
-			   ) - 4.0*vertices[x][y].pos.z;
-		   velocities[x][y] += force/2.5 ;
-		   //velocities[x][y] *= 0.999;
+			   )
+			   + (
+				   vertices[x+1][y+1].pos.z +
+				   vertices[x+1][y-1].pos.z +
+				   vertices[x-1][y+1].pos.z +
+				   vertices[x-1][y-1].pos.z
+			   )*0.707;
+		   GLfloat force = neighbours - 4.0*1.707*vertices[x][y].pos.z;
+		   //GLfloat blur =  neighbours + 4.0*(1.707)*vertices[x][y].pos.z;
+		   velocities[x][y] += force*0.2;// - 0.001*(vertices[x][y].concentration-1.0);//copysign(0.00003, (vertices[x][y].concentration-1.0)) ;
 	   }
 /*
    for (i=0;i<VERTEX_GAPS+1;i++)
@@ -262,40 +315,13 @@ void adjust_vertices(long when)
 	   velocities[i][VERTEX_GAPS] = velocities[i][VERTEX_GAPS-1];
    }
 */
-   for (x=1;x<VERTEX_GAPS;x++)
-	   for (y=1;y<VERTEX_GAPS;y++)
-	   {
-		   vertices[x][y].norm.x = ( vertices[x-1][y].pos.z - vertices[x+1][y].pos.z ) / (2.0*GAP_WIDTH);
-		   vertices[x][y].norm.y = ( vertices[x][y-1].pos.z - vertices[x][y+1].pos.z ) / (2.0*GAP_WIDTH);
-		   //these point down towards +ve z
-	   }
-   for (x=1;x<VERTEX_GAPS;x++)
-	   for (y=1;y<VERTEX_GAPS;y++)
-	   {
-		   float g = 12.0*GAP_WIDTH;
-		   float delnormx = ( vertices[x+1][y].norm.x - vertices[x-1][y].norm.x ) / g;
-		   float delnormy = ( vertices[x][y+1].norm.y - vertices[x][y-1].norm.y ) / g;
-//		   vertices[x][y].concentration =1.0/(1.0+abs((1.0+delnormx/6.0)*(1.0+delnormy/6.0)));//depth
-		   vertices[x][y].concentration =(1.0+delnormx)*(1.0+delnormy);//depth
-	   }
-   for (i=0;i<VERTEX_GAPS+1;i++)
-   {
-	   vertices[0][i].norm.x = vertices[1][i].norm.x;
-	   vertices[0][i].norm.y = vertices[1][i].norm.y;
-	   vertices[VERTEX_GAPS][i].norm.x = vertices[VERTEX_GAPS-1][i].norm.x;
-	   vertices[VERTEX_GAPS][i].norm.y = vertices[VERTEX_GAPS-1][i].norm.y;
-	   vertices[i][0].norm.x = vertices[i][1].norm.x;
-	   vertices[i][0].norm.y = vertices[i][1].norm.y;
-	   vertices[i][VERTEX_GAPS].norm.x = vertices[i][VERTEX_GAPS-1].norm.x;
-	   vertices[i][VERTEX_GAPS].norm.y = vertices[i][VERTEX_GAPS-1].norm.y;
-
-   }
 }
 
 GLuint vboIds[3];
 
 void getLocations()
 {
+#ifndef JUSTCAUSTICS
     gvPositionMain = glGetAttribLocation(gProgramMain, "a_position"); checkGlError("glGetAttribLocation");
     gvNormalMain = glGetAttribLocation(gProgramMain, "a_normal"); checkGlError("glGetAttribLocation");
     gvSamplerHandle = glGetUniformLocation(gProgramMain, "u_sampler"); checkGlError("glGetAttribLocation");
@@ -305,7 +331,7 @@ void getLocations()
     gvSunpos = glGetUniformLocation(gProgramMain, "u_sunpos"); checkGlError("glGetAttribLocation");
     gvSunsize = glGetUniformLocation(gProgramMain, "u_sunsize"); checkGlError("glGetAttribLocation");
     gvDepth = glGetUniformLocation(gProgramMain, "u_depth"); checkGlError("glGetAttribLocation");
-
+#endif
     gvPositionCaustics = glGetAttribLocation(gProgramCaustics, "a_position"); checkGlError("glGetAttribLocation");
     gvNormalCaustics = glGetAttribLocation(gProgramCaustics, "a_normal"); checkGlError("glGetAttribLocation");
     gvConcentrationCaustics = glGetAttribLocation(gProgramCaustics, "a_concentration"); checkGlError("glGetAttribLocation");
@@ -313,7 +339,7 @@ void getLocations()
 
 bool setupGraphics(int w, int h) {
 	width=w; height=h;
-    glViewport(0, 0, CAUSTURE_RES, CAUSTURE_RES);
+    glViewport(0, 0, width, height);
     printGLString("Version", GL_VERSION);
     printGLString("Vendor", GL_VENDOR);
     printGLString("Renderer", GL_RENDERER);
@@ -329,11 +355,13 @@ bool setupGraphics(int w, int h) {
     sun.y/=sunmag;
     sun.z/=sunmag;
 
+#ifndef JUSTCAUSTICS
     gProgramMain = createProgram(gVertexMain, gFragmentMain);
     if (!gProgramMain) {
         LOGE("Could not create program.");
         return false;
     }
+#endif
 
     gProgramCaustics = createProgram(gVertexCaustics, gFragmentCaustics);
     if (!gProgramCaustics) {
@@ -350,8 +378,8 @@ bool setupGraphics(int w, int h) {
 
     glTexParameterf(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-
+//    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+#ifndef JUSTCAUSTICS
     glGenTextures(1, &gvCausticsTexture);
     glGenFramebuffers(1, &gvFrameBuffer);
     glActiveTexture(GL_TEXTURE0); checkGlError("glActiveTexture 1");
@@ -359,10 +387,8 @@ bool setupGraphics(int w, int h) {
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, CAUSTURE_RES, CAUSTURE_RES, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
     glBindFramebuffer(GL_FRAMEBUFFER, gvFrameBuffer);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, gvCausticsTexture, 0);
+#endif
 
-    glBindBuffer(GL_ARRAY_BUFFER, vboIds[0]); checkGlError("glBindBuffer GL_ARRAY_BUFFER");
-
-    glEnable(GL_DEPTH_TEST);
 //    glDepthRangef(-20.0, 20.0);
 
     checkGlError("glViewport");
@@ -374,39 +400,42 @@ void renderFrame(long when) {
 	adjust_vertices(when);
 	move_eye();
 
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+//    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+//    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
 
+    glBindBuffer(GL_ARRAY_BUFFER, vboIds[0]); checkGlError("glBindBuffer GL_ARRAY_BUFFER");
     glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex)*VERTEX_COUNT_ALL, vertices, GL_DYNAMIC_DRAW); checkGlError("glBufferData GL_ARRAY_BUFFER");
 
     //caustics pass
 
     glUseProgram(gProgramCaustics); checkGlError("glUseProgram Caustics");
 
-    glBindBuffer(GL_ARRAY_BUFFER, vboIds[0]); checkGlError("glBindBuffer GL_ARRAY_BUFFER");
+//    glBindBuffer(GL_ARRAY_BUFFER, vboIds[0]); checkGlError("glBindBuffer GL_ARRAY_BUFFER");
     glEnableVertexAttribArray(gvPositionCaustics); checkGlError("glEnableVertexAttribArray gvPositionCaustics");
     glVertexAttribPointer(gvPositionCaustics, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void*)0); checkGlError("glVertexAttribPointer");
     glEnableVertexAttribArray(gvNormalCaustics); checkGlError("glEnableVertexAttribArray gvNormalCaustics");
     glVertexAttribPointer(gvNormalCaustics, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void*)(3*sizeof(GLfloat))); checkGlError("glVertexAttribPointer");
     glEnableVertexAttribArray(gvConcentrationCaustics); checkGlError("glEnableVertexAttribArray gvConcentrationCaustics");
     glVertexAttribPointer(gvConcentrationCaustics, 1, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void*)(5*sizeof(GLfloat))); checkGlError("glVertexAttribPointer");
-    glBindFramebuffer(GL_FRAMEBUFFER, gvFrameBuffer);
-//    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glViewport(0, 0, CAUSTURE_RES, CAUSTURE_RES);
-//    glViewport(0, 0, width, height);
+#ifndef JUSTCAUSTICS
+    glBindFramebuffer(GL_FRAMEBUFFER, gvFrameBuffer);  glViewport(0, 0, CAUSTURE_RES, CAUSTURE_RES);
+#else
+    glViewport(0, 0, width, height);
+#endif
     glClearColor(0.0, 0.0, 0.0, 0.0); checkGlError("glClearColor");
     glClear(GL_COLOR_BUFFER_BIT); checkGlError("glClear");
+    //    glDisable(GL_BLEND);
     glEnable(GL_BLEND);checkGlError("glEnable Blend");
-    glBlendFunc(GL_ONE, GL_ONE);checkGlError("glBlendFunc");
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    //glDisable(GL_DEPTH_TEST);
+    glBlendFunc(GL_SRC_ALPHA_SATURATE, GL_ONE);checkGlError("glBlendFunc");
+//    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+//    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glDisable(GL_DEPTH_TEST);
+    //glEnable(GL_DEPTH_TEST);
     glDrawElements(GL_TRIANGLE_STRIP, INDEX_COUNT_SURF, GL_UNSIGNED_SHORT, 0); checkGlError("glDrawElements Caustics");
-    glDisable(GL_BLEND);
 
     //main pass
-
+#ifndef JUSTCAUSTICS
     glUseProgram(gProgramMain); checkGlError("glUseProgram");
     glEnableVertexAttribArray(gvPositionMain); checkGlError("glEnableVertexAttribArray gvPositionMain");
     glVertexAttribPointer(gvPositionMain, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void*)0); checkGlError("glVertexAttribPointer");
@@ -427,24 +456,24 @@ void renderFrame(long when) {
 
 
 //    glBindFramebuffer(GL_FRAMEBUFFER, gvFrameBuffer);
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glViewport(0, 0, width, height);checkGlError("glViewport");
+    glBindFramebuffer(GL_FRAMEBUFFER, 0); glViewport(0, 0, width, height);checkGlError("glViewport");
     glClearColor(0.0,0.0,0.0,0.0); checkGlError("glClearColor");
     glClear( GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT); checkGlError("glClear");
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glDisable(GL_BLEND);checkGlError("glEnable Blend");
     glEnable(GL_DEPTH_TEST);
-    glDepthRangef(0.0, 0.1);
+    glDepthRangef(-1.0, 1.0);
     glDrawElements(GL_TRIANGLE_STRIP, INDEX_COUNT_ALL, GL_UNSIGNED_SHORT, 0); checkGlError("glDrawElements");
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
+//    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+#endif
 }
 
 
 #define DECLS_CAUSTICS \
-	    "invariant varying highp float v_concentration;" \
-		"invariant varying highp vec3 v_position;"
+		"precision highp float;" \
+	    "invariant varying float v_concentration;" \
+		"invariant varying vec3 v_position;"
 
 char gVertexCaustics[] =
 	"attribute vec3 a_position;"
@@ -455,15 +484,16 @@ char gVertexCaustics[] =
     "void main() {"
     "  v_position = a_position + 0.1667* vec3(a_normal, 0.0);"
     "  gl_Position = vec4(v_position.x*2.0, v_position.y*2.0, 0.0, 1.0);"
-    "  v_concentration  = 0.3+1.1/(1.05+a_concentration);"
+//    "  gl_Position = vec4(a_position.x*10.0*480.0/800.0, a_position.y*10.0, -0.1, 1.0);"
+    "  v_concentration  = (0.2+1.3/(1.05+a_concentration)/2.0)	;"
+//    "  v_concentration  = a_position.z*100.0+0.5;"
     "}"
 	;
 
 char gFragmentCaustics[] =
-    "precision highp float;"
 	DECLS_CAUSTICS
     "void main() {"
-	"    gl_FragColor = vec4(v_concentration, v_concentration, v_concentration, 1.0);"
+	"    gl_FragColor = vec4(1.0, 1.0, 1.0, v_concentration);"
     "}"
 	;
 
@@ -577,8 +607,7 @@ char gFragmentMain[] =
     "void main() {"
     "    vec4 cubecol = (textureCube(u_texture, v_splat)+0.25)*0.8;"
 	"    vec4 causcol = texture2D(u_causture, v_causlookup);"
-	"    gl_FragColor =  v_shine + cubecol*v_fog*causcol.r;"
+	"    gl_FragColor =  v_shine + cubecol*v_fog*causcol.a*2.0;"
     "}"
-
 	;
 
