@@ -83,6 +83,12 @@ void checkGlError(const char* op) {
     }
 }
 
+void barfIfNull(const char * p, GLuint i)
+{
+	if (!i)
+		LOGI("%s is ZERO!!!\n",p);
+}
+
 GLuint loadShader(GLenum shaderType, const char* pSource) {
     GLuint shader = glCreateShader(shaderType);
     if (shader) {

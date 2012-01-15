@@ -22,11 +22,11 @@ bool setupGraphics(int w, int h);
 void renderFrame(long when);
 void bitmap(int which, int id);
 
-
-
 GLuint createProgram(const char* pVertexSource, const char* pFragmentSource);
 void printGLString(const char *name, GLenum s);
 void checkGlError(const char* op);
+void barfIfNull(const char * p, GLuint);
+
 
 struct Vec2 {
 	GLfloat x;

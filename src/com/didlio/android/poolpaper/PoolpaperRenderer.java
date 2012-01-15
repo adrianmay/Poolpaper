@@ -1,14 +1,14 @@
 package com.didlio.android.poolpaper;
        
-import javax.microedition.khronos.egl.EGLConfig;              
+import javax.microedition.khronos.egl.EGLConfig;               
 import javax.microedition.khronos.opengles.GL10; 
 import javax.microedition.khronos.opengles.GL11;
 import javax.microedition.khronos.opengles.GL11Ext;
 import javax.microedition.khronos.opengles.GL11ExtensionPack;
-     
-import android.content.Context;  
-import android.graphics.Bitmap;
-import android.graphics.Color;
+                                                        
+import android.content.Context;    
+import android.graphics.Bitmap;              
+import android.graphics.Color;     
 import android.graphics.BitmapFactory; 
 import android.graphics.Matrix;    
 import android.opengl.GLSurfaceView;      
@@ -33,14 +33,15 @@ public class PoolpaperRenderer implements GLSurfaceView.Renderer {
         C.init(width, height);          
     }                                     
         
-    public void onSurfaceCreated(GL10 gl, EGLConfig config) {                         
+    public void onSurfaceCreated(GL10 gl, EGLConfig config) {             
+    	C.bitmap(1, loadTexture(gl, service, R.drawable.bw));
         C.bitmap(0, loadCubeTexture(gl, service, new int [] {        
         		//R.drawable.olyjack_touched_512,
         		R.drawable.olydiagcol, 
         		R.drawable.chess_blue,                
         		R.drawable.chess_blue,                                  
         		R.drawable.chess_blue,    
-        		R.drawable.chess_blue,                
+        		R.drawable.chess_blue,                      
         		R.drawable.olydiagcol    
         		/*                  
         		R.drawable.bot,
@@ -51,13 +52,13 @@ public class PoolpaperRenderer implements GLSurfaceView.Renderer {
         		R.drawable.top 
         		*/
         		}));                                            
-    }    
+    }         
   	      
  // Get a new texture id:   
     private static int newTextureID(GL10 gl) {  
         int[] temp = new int[1];
         gl.glGenTextures(1, temp, 0);
-        return temp[0];        
+        return temp[0];         
     }     
 
     // Will load a texture out of a drawable resource file, and return an OpenGL texture ID:
@@ -88,10 +89,8 @@ public class PoolpaperRenderer implements GLSurfaceView.Renderer {
                                                             
         gl.glBindTexture(GL10.GL_TEXTURE_2D, id);         
                                                                                     
-        mipMapBrighter(gl, bmp, GL10.GL_TEXTURE_2D); 
+        mipMap(gl, bmp, GL10.GL_TEXTURE_2D); 
              
-                               
-            
         return id;
     }
 
@@ -135,7 +134,7 @@ public class PoolpaperRenderer implements GLSurfaceView.Renderer {
         }
         
         return id;                                                                
-    }    
+    }     
                                                              
     private void mipMap(GL10 gl, Bitmap bmp, int role)
     {
@@ -145,7 +144,7 @@ public class PoolpaperRenderer implements GLSurfaceView.Renderer {
             GLUtils.texImage2D(role, level, bmp, 0);
             
             // We need to stop when the texture is 1x1:   
-            if(height==1 && width==1) break;
+            if(height==1 && width==1) break;   
             
             // Resize, and let's go again:  
             width >>= 1; height >>= 1;

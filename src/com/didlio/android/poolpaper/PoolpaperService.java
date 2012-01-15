@@ -15,7 +15,7 @@ import android.opengl.GLSurfaceView.EGLConfigChooser;
 import android.opengl.GLSurfaceView.EGLContextFactory;
 import android.util.Log;
 import com.didlio.android.poolpaper.*;
- 
+  
 public class PoolpaperService extends GLWallpaperService {
 	private static String TAG = "Poolpaper";
 	private static final boolean DEBUG = true;		
@@ -91,7 +91,7 @@ public class PoolpaperService extends GLWallpaperService {
             egl.eglChooseConfig(display, s_configAttribs2, configs, numConfigs, num_config);
 
             if (DEBUG) {
-                 printConfigs(egl, display, configs);
+                 //printConfigs(egl, display, configs);
             }
             /* Now return the "best" one
              */
@@ -137,6 +137,7 @@ public class PoolpaperService extends GLWallpaperService {
 
         private void printConfigs(EGL10 egl, EGLDisplay display,
             EGLConfig[] configs) {
+        	
             int numConfigs = configs.length;
             Log.w(TAG, String.format("%d configurations", numConfigs));
             for (int i = 0; i < numConfigs; i++) {
@@ -224,7 +225,7 @@ public class PoolpaperService extends GLWallpaperService {
                 if ( egl.eglGetConfigAttrib(display, config, attribute, value)) {
                     Log.w(TAG, String.format("  %s: %d\n", name, value[0]));
                 } else {
-                    // Log.w(TAG, String.format("  %s: failed\n", name));
+                    //Log.w(TAG, String.format("  %s: failed\n", name));
                     while (egl.eglGetError() != EGL10.EGL_SUCCESS);
                 }
             }
