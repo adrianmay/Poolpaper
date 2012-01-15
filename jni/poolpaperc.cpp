@@ -119,7 +119,7 @@ void update_eye_cartesian()
 void move_eye()
 {
 //	return;
-	eye_long-=0.0025;
+	eye_long-=0.0007;
 	zoom = 3.0 + cos(4.0*eye_long);
 	//eye_lat+=0.001;
 	update_eye_cartesian();
