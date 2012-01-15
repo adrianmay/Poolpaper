@@ -46,7 +46,7 @@ struct Vertex {
 #define PLOP_HEIGHT 0.0025
 #define PLOP_WIDTH 2.5
 
-const int VERTEX_GAPS=128.0;
+const int VERTEX_GAPS=64.0;
 const GLfloat VERTEX_PLANE_WIDTH = 1.0;
 const int CAUSTURE_RES=512.0;
 
@@ -161,10 +161,10 @@ void init_vertices()
            velocities[x][y]=0.0;
        }
 
-   for (i=0;i<10;i++)
+   for (i=0;i<30;i++)
    {
 	   plop(3.14159/4.0);
-	   plop(3.14159/2.0);
+	   plop(3.14159/8.0);
    }
 
    i=0;
