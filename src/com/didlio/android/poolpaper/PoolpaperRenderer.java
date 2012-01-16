@@ -5,7 +5,7 @@ import javax.microedition.khronos.opengles.GL10;
 import javax.microedition.khronos.opengles.GL11;
 import javax.microedition.khronos.opengles.GL11Ext;
 import javax.microedition.khronos.opengles.GL11ExtensionPack;
-                                                          
+                                                            
 import android.content.Context;    
 import android.graphics.Bitmap;              
 import android.graphics.Color;     
@@ -13,24 +13,22 @@ import android.graphics.BitmapFactory;
 import android.graphics.Matrix;    
 import android.opengl.GLSurfaceView;      
 import android.opengl.GLUtils;                           
-import android.os.SystemClock;
- 
-import com.didlio.android.poolpaper.*;   
-                        
-          
-                                                                 
+import android.os.SystemClock;  
+    
+import com.didlio.android.poolpaper.*;                                 
+                
 public class PoolpaperRenderer implements GLSurfaceView.Renderer {        
                                                                    
-	   
+	         
 	private PoolpaperService service;      
 	public PoolpaperRenderer(PoolpaperService s) {service=s;}
     public void onDrawFrame(GL10 gl) {                                    
-    	                                    
+    	                                          
         C.step(SystemClock.elapsedRealtime());                        
     }                                                                  
       
     public void onSurfaceChanged(GL10 gl, int width, int height) {        
-        C.init(width, height);          
+        C.init(width, height);             
     }                                     
         
     public void onSurfaceCreated(GL10 gl, EGLConfig config) {             

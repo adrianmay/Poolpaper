@@ -160,16 +160,40 @@ extern "C" {
     JNIEXPORT void JNICALL Java_com_didlio_android_poolpaper_C_bitmap(JNIEnv * env, jobject obj, jint which, jint id);
 };
 
-
+long oldwhen=0;
+float average_interval = 0;
+int samples=0;
 
 JNIEXPORT void JNICALL Java_com_didlio_android_poolpaper_C_init(JNIEnv * env, jobject obj,  jint width, jint height)
 {
+	oldwhen=0;
+	average_interval = 0;
+	samples=0;
     setupGraphics(width, height);
 }
 
+
+void sample(float interval)
+{
+//	if (interval > 5.0*average_interval || interval < average_interval/5.0)
+//		return;
+	if (samples<20)
+		samples++;
+	float weight = 1.0/samples;
+	average_interval = weight*interval + (1.0-weight)*average_interval ;
+}
+/*
+long sane(long t)
+{
+	return (t>3 && t<100) ? t : TYPICAL_INTERVAL;
+}
+*/
 JNIEXPORT void JNICALL Java_com_didlio_android_poolpaper_C_step(JNIEnv * env, jobject obj, jlong when)
 {
-    renderFrame(when);
+	if (oldwhen)
+		sample(when-oldwhen);
+	renderFrame(average_interval);
+    oldwhen=when;
 }
 
 JNIEXPORT void JNICALL Java_com_didlio_android_poolpaper_C_bitmap(JNIEnv * env, jobject obj, jint which, jint id)

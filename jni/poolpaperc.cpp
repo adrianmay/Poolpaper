@@ -44,11 +44,13 @@ struct Vertex {
 };
 
 #define PLOP_HEIGHT 0.0025
-#define PLOP_WIDTH 2.5
+#define PLOP_WIDTH 0.012
+#define TURN_SPEED 0.1
 
 const int VERTEX_GAPS=64.0;
 const GLfloat VERTEX_PLANE_WIDTH = 1.0;
 const int CAUSTURE_RES=512.0;
+#define PLOP_CELLS (PLOP_WIDTH*VERTEX_GAPS)
 
 GLfloat eye_long;
 GLfloat eye_lat;
@@ -116,10 +118,10 @@ void update_eye_cartesian()
 	//velocities[(int)(VERTEX_GAPS/2 + eye.x/3.0*VERTEX_GAPS/VERTEX_PLANE_WIDTH)][(int)(VERTEX_GAPS/2 + eye.y/3.0*VERTEX_GAPS/VERTEX_PLANE_WIDTH)] +=0.1;
 }
 
-void move_eye()
+void move_eye(long when)
 {
 //	return;
-	eye_long-=0.0007;
+	eye_long-=TURN_SPEED*when/1000.0;
 	zoom = 3.0 + cos(4.0*eye_long);
 	//eye_lat+=0.001;
 	update_eye_cartesian();
@@ -161,10 +163,10 @@ void init_vertices()
            velocities[x][y]=0.0;
        }
 
-   for (i=0;i<30;i++)
+   for (i=0;i<50;i++)
    {
-	   plop(3.14159/4.0);
-	   plop(3.14159/8.0);
+	   plop(PLOP_CELLS);
+	   plop(PLOP_CELLS/2.0);
    }
 
    i=0;
@@ -235,10 +237,55 @@ void adjust_vertices(long when)
 {
 
    int x,y,i;
+   float t = ((float)when)/((float)TYPICAL_INTERVAL);
+   //add old velocities to positions
    for (x=1;x<VERTEX_GAPS;x++)
 	   for (y=1;y<VERTEX_GAPS;y++)
-		   vertices[x][y].pos.z += velocities[x][y];
+		   vertices[x][y].pos.z += velocities[x][y]*t;
 
+   //get new velocities
+   for (x=1;x<VERTEX_GAPS;x++)
+	   for (y=1;y<VERTEX_GAPS;y++)
+	   {
+		   GLfloat neighbours = (
+				   vertices[x][y+1].pos.z +
+				   vertices[x][y-1].pos.z +
+				   vertices[x+1][y].pos.z +
+				   vertices[x-1][y].pos.z
+			   ) /*
+			   + (
+				   vertices[x+1][y+1].pos.z +
+				   vertices[x+1][y-1].pos.z +
+				   vertices[x-1][y+1].pos.z +
+				   vertices[x-1][y-1].pos.z
+			   )*0.707 */ ;
+		   GLfloat force = neighbours - 4.0*vertices[x][y].pos.z;
+		   //GLfloat blur =  neighbours + 4.0*(1.707)*vertices[x][y].pos.z;
+		   velocities[x][y] += force*0.5*t;// - 0.001*(vertices[x][y].concentration-1.0);//copysign(0.00003, (vertices[x][y].concentration-1.0)) ;
+	   }
+
+   /*
+      //treat edge velocities and positions
+      for (i=0;i<VERTEX_GAPS+1;i++)
+      {
+   	   vertices[0][i].pos.z = vertices[1][i].pos.z;
+   	   velocities[0][i] = velocities[1][i];
+   	   vertices[VERTEX_GAPS][i].pos.z = vertices[VERTEX_GAPS-1][i].pos.z;
+   	   velocities[VERTEX_GAPS][i] = velocities[VERTEX_GAPS-1][i];
+
+   	   vertices[i][0].pos.z = vertices[i][1].pos.z;
+   	   velocities[i][0] = velocities[i][1];
+   	   vertices[i][VERTEX_GAPS].pos.z = vertices[i][VERTEX_GAPS-1].pos.z;
+   	   velocities[i][VERTEX_GAPS] = velocities[i][VERTEX_GAPS-1];
+      }
+   */
+
+}
+
+void get_norms_and_curves()
+{
+   int x,y,i;
+   //get norms
    for (x=1;x<VERTEX_GAPS;x++)
 	   for (y=1;y<VERTEX_GAPS;y++)
 	   {
@@ -246,6 +293,8 @@ void adjust_vertices(long when)
 		   vertices[x][y].norm.y = ( vertices[x][y-1].pos.z - vertices[x][y+1].pos.z ) / (2.0*GAP_WIDTH);
 		   //these point down towards +ve z
 	   }
+
+   //get curvature
    for (x=1;x<VERTEX_GAPS;x++)
 	   for (y=1;y<VERTEX_GAPS;y++)
 	   {
@@ -255,21 +304,8 @@ void adjust_vertices(long when)
 //		   vertices[x][y].concentration =1.0/(1.0+abs((1.0+delnormx/6.0)*(1.0+delnormy/6.0)));//depth
 		   vertices[x][y].concentration = fabs((1.0+delnormx)*(1.0+delnormy));//depth
 	   }
-   /*
-   for (x=1;x<VERTEX_GAPS;x++)
-	   for (y=1;y<VERTEX_GAPS;y++)
-		   vertices[x][y].concentration = 0.33*(vertices[x][y].concentration + 2.0*vertices[x+1][y].concentration);
-   for (y=1;y<VERTEX_GAPS;y++)
-	   for (x=1;x<VERTEX_GAPS;x++)
-		   vertices[x][y].concentration = 0.33*(vertices[x][y].concentration + 2.0*vertices[x][y+1].concentration);
 
-   for (x=VERTEX_GAPS-1;x>0;x--)
-	   for (y=1;y<VERTEX_GAPS;y++)
-		   vertices[x][y].concentration = 0.33*(vertices[x][y].concentration + 2.0*vertices[x-1][y].concentration);
-   for (y=VERTEX_GAPS-1;y>0;y--)
-	   for (x=1;x<VERTEX_GAPS;x++)
-		   vertices[x][y].concentration = 0.33*(vertices[x][y].concentration + 2.0*vertices[x][y-1].concentration);
-*/
+   //treat norms at edges
    for (i=0;i<VERTEX_GAPS+1;i++)
    {
 	   vertices[0][i].norm.x = vertices[1][i].norm.x;
@@ -283,39 +319,6 @@ void adjust_vertices(long when)
 
    }
 
-   for (x=1;x<VERTEX_GAPS;x++)
-	   for (y=1;y<VERTEX_GAPS;y++)
-	   {
-		   GLfloat neighbours = (
-				   vertices[x][y+1].pos.z +
-				   vertices[x][y-1].pos.z +
-				   vertices[x+1][y].pos.z +
-				   vertices[x-1][y].pos.z
-			   )
-			   + (
-				   vertices[x+1][y+1].pos.z +
-				   vertices[x+1][y-1].pos.z +
-				   vertices[x-1][y+1].pos.z +
-				   vertices[x-1][y-1].pos.z
-			   )*0.707;
-		   GLfloat force = neighbours - 4.0*1.707*vertices[x][y].pos.z;
-		   //GLfloat blur =  neighbours + 4.0*(1.707)*vertices[x][y].pos.z;
-		   velocities[x][y] += force*0.2;// - 0.001*(vertices[x][y].concentration-1.0);//copysign(0.00003, (vertices[x][y].concentration-1.0)) ;
-	   }
-/*
-   for (i=0;i<VERTEX_GAPS+1;i++)
-   {
-	   vertices[0][i].pos.z = vertices[1][i].pos.z;
-	   velocities[0][i] = velocities[1][i];
-	   vertices[VERTEX_GAPS][i].pos.z = vertices[VERTEX_GAPS-1][i].pos.z;
-	   velocities[VERTEX_GAPS][i] = velocities[VERTEX_GAPS-1][i];
-
-	   vertices[i][0].pos.z = vertices[i][1].pos.z;
-	   velocities[i][0] = velocities[i][1];
-	   vertices[i][VERTEX_GAPS].pos.z = vertices[i][VERTEX_GAPS-1].pos.z;
-	   velocities[i][VERTEX_GAPS] = velocities[i][VERTEX_GAPS-1];
-   }
-*/
 }
 
 GLuint vboIds[3];
@@ -398,10 +401,20 @@ bool setupGraphics(int w, int h) {
     return true;
 }
 
+#define MAX_INTERVAL 10
 
 void renderFrame(long when) {
-	adjust_vertices(when);
-	move_eye();
+
+	for (int w=when; w>0; )
+	{
+		int t = (w>MAX_INTERVAL) ? MAX_INTERVAL : w;
+		adjust_vertices(t);
+		w -= t;
+	}
+
+//	adjust_vertices(when);
+	get_norms_and_curves();
+	move_eye(when);
 
 //    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 //    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -545,7 +558,7 @@ char gVertexMain[] =
 	"attribute vec3 a_position;"
 	"attribute vec2 a_normal;"
 	DECLS_MAIN
-
+/*
 	"void findsplat(in vec3 from, in vec3 to, out vec3 splat) "
 	"{"
 	"  float signx = (to.x>0.0) ? 1.0 : -1.0;"
@@ -588,7 +601,7 @@ char gVertexMain[] =
 	"  reflectance = (fresnel_rs*fresnel_rs + fresnel_rp*fresnel_rp)/2.0;"
 	"  transmittance = 1.0 - reflectance;"
 	"}"
-
+*/
     "void main() {"
 	"  float water, t;"
 	"  vec3 dummy;"
@@ -665,7 +678,7 @@ char gFragmentMain[] =
 //    "    vec4 cubecol = textureCube(u_texture, vec3(v_position.x,0.5,-v_position.y));"
     "    vec4 cubecol = (textureCube(u_texture, v_splat)+0.25)*0.8;"
 	"    vec4 causcol = texture2D(u_causture, v_causlookup);"
-	"    gl_FragColor =   v_shine + cubecol * v_fog * causcol.r * 2.0 ;"
+	"    gl_FragColor =   v_shine + cubecol * v_fog * mix(0.5, causcol.r, -v_splat.y*2.0) * 2.0 ;"
 //	"    gl_FragColor =   vec4(v_reflect.x*10.0,v_reflect.y*10.0,0.2,1.0) ;"
     "}"
 	;
