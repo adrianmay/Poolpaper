@@ -678,7 +678,7 @@ char gFragmentMain[] =
 //    "    vec4 cubecol = textureCube(u_texture, vec3(v_position.x,0.5,-v_position.y));"
     "    vec4 cubecol = (textureCube(u_texture, v_splat)+0.25)*0.8;"
 	"    vec4 causcol = texture2D(u_causture, v_causlookup);"
-	"    gl_FragColor =   v_shine + cubecol * v_fog * mix(0.5, causcol.r, -v_splat.y*2.0) * 2.0 ;"
+	"    gl_FragColor =   v_shine + cubecol * v_fog * mix(0.3, causcol.r, -v_splat.y*2.0) * 2.0 ;"
 //	"    gl_FragColor =   vec4(v_reflect.x*10.0,v_reflect.y*10.0,0.2,1.0) ;"
     "}"
 	;

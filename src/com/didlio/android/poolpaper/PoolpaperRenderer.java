@@ -14,8 +14,8 @@ import android.graphics.Matrix;
 import android.opengl.GLSurfaceView;      
 import android.opengl.GLUtils;                           
 import android.os.SystemClock;  
-    
-import com.didlio.android.poolpaper.*;                                 
+       
+import com.didlio.android.poolpaper.*;                                  
                 
 public class PoolpaperRenderer implements GLSurfaceView.Renderer {        
                                                                    
