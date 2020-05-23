@@ -1,5 +1,4 @@
 # Poolpaper
-Android animated wallpaper depicting water
 
 In 2013 it looked like this: 
 
