@@ -8,6 +8,7 @@ public class C {
     public static native void init(int width, int height);
     public static native void step(long when);
     public static native void bitmap(int which, int id);
+    public static native void poke(int type, int x, int y);
 
     
 }

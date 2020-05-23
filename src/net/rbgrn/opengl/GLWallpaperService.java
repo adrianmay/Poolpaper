@@ -1,5 +1,5 @@
 package net.rbgrn.opengl;
-
+                                                                 
 import net.rbgrn.opengl.BaseConfigChooser.ComponentSizeChooser;
 import net.rbgrn.opengl.BaseConfigChooser.SimpleEGLConfigChooser;
 
@@ -42,8 +42,8 @@ public class GLWallpaperService extends WallpaperService {
 	
 	@Override
 	public void onDestroy() {
-		super.onDestroy();    
-	}	
+		super.onDestroy();          
+	}	    
 
 	@Override
 	public Engine onCreateEngine() {
@@ -120,7 +120,7 @@ public class GLWallpaperService extends WallpaperService {
 		public void onSurfaceChanged(final SurfaceHolder holder, final int format, final int width, final int height) {
 			// Log.d(TAG, "onSurfaceChanged()");
 			this.mGLThread.onWindowResize(width, height);
-			super.onSurfaceChanged(holder, format, width, height);
+			super.onSurfaceChanged(holder, format, width, height);            
 		}
 
 		@Override

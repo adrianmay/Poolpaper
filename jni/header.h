@@ -13,7 +13,8 @@
 #include <stdlib.h>
 #include <math.h>
 
-#define TYPICAL_INTERVAL 45
+#define TYPICAL_INTERVAL 20
+#define MAX_INTERVAL 20
 
 #define  LOG_TAG    "poolpaperc"
 #define  LOGI(...)  __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
@@ -49,12 +50,14 @@ struct Matrix
 	GLfloat e[4][4];
 	Matrix();
 	void transpose_out(GLfloat * to);
+	void act(GLfloat * src, GLfloat * dst);
 	void rot(GLfloat angle, int x, int y);
 	void rot_z(GLfloat angle);
 	void rot_x(GLfloat angle);
 	void rot_y(GLfloat angle);
 	void pers(float dist);
 	void premul(Matrix & pre);
+	void inverse(Matrix & res);
 	void stretch(GLfloat x, GLfloat y, GLfloat z);
 	void trans(GLfloat x, GLfloat y, GLfloat z);
 	void squelch(GLfloat x, GLfloat y, GLfloat z);

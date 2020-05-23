@@ -15,7 +15,8 @@ import android.opengl.GLSurfaceView.EGLConfigChooser;
 import android.opengl.GLSurfaceView.EGLContextFactory;
 import android.util.Log;
 import com.didlio.android.poolpaper.*;
-  
+import android.view.MotionEvent;
+       
 public class PoolpaperService extends GLWallpaperService {
 	private static String TAG = "Poolpaper";
 	private static final boolean DEBUG = true;		
@@ -96,7 +97,7 @@ public class PoolpaperService extends GLWallpaperService {
             /* Now return the "best" one
              */
             return chooseConfig(egl, display, configs);
-        }
+        }   
 
         public EGLConfig chooseConfig(EGL10 egl, EGLDisplay display,
                 EGLConfig[] configs) {
@@ -193,15 +194,15 @@ public class PoolpaperService extends GLWallpaperService {
                     "EGL_STENCIL_SIZE",
                     "EGL_CONFIG_CAVEAT",
                     "EGL_CONFIG_ID",
-                    "EGL_LEVEL",
+                    "EGL_LEVEL",                                                                                  
                     "EGL_MAX_PBUFFER_HEIGHT",
                     "EGL_MAX_PBUFFER_PIXELS",
                     "EGL_MAX_PBUFFER_WIDTH",
                     "EGL_NATIVE_RENDERABLE",
                     "EGL_NATIVE_VISUAL_ID",
-                    "EGL_NATIVE_VISUAL_TYPE",
-                    "EGL_PRESERVED_RESOURCES",
-                    "EGL_SAMPLES",
+                    "EGL_NATIVE_VISUAL_TYPE",                                    
+                    "EGL_PRESERVED_RESOURCES",                       
+                    "EGL_SAMPLES",         
                     "EGL_SAMPLE_BUFFERS",
                     "EGL_SURFACE_TYPE",
                     "EGL_TRANSPARENT_TYPE",
@@ -235,28 +236,42 @@ public class PoolpaperService extends GLWallpaperService {
         protected int mRedSize;
         protected int mGreenSize;
         protected int mBlueSize;
-        protected int mAlphaSize;
+        protected int mAlphaSize; 
         protected int mDepthSize;
         protected int mStencilSize;
         private int[] mValue = new int[1];
-    }
+    }                  
 	
-
+    
 	class PoolpaperEngine extends GLEngine {
 		private static final String TAG = "PoolpaperEngine";
-
+		PoolpaperRenderer renderer=null;
 		public PoolpaperEngine(SharedPreferences preferences, PoolpaperService service) {
 			super();  
 
 			setEGLContextFactory(new ContextFactory());
 			setEGLConfigChooser(new ConfigChooser(5, 6, 5, 0, 16, 0));
 
-			PoolpaperRenderer renderer = new PoolpaperRenderer(service);
+			renderer = new PoolpaperRenderer(service);
 			//renderer.setSharedPreferences(preferences);
 			setRenderer(renderer);
 			setRenderMode(RENDERMODE_CONTINUOUSLY);
 		} 
-	}
+		public void onTouchEvent(MotionEvent event) {
+			if (renderer != null) {
+	            if (event.getAction() == MotionEvent.ACTION_MOVE ) {                        
+	                renderer.onPoke(0, (int)event.getX(0), (int)event.getY(0));
+	            }
+	            else if (event.getAction() == MotionEvent.ACTION_DOWN) {                         
+	                renderer.onPoke(1, (int)event.getX(0), (int)event.getY(0));
+	            }           
+	            else if (event.getAction() == MotionEvent.ACTION_UP) {                           
+	                renderer.onPoke(2, (int)event.getX(0), (int)event.getY(0));
+	            }           
+			}
+            super.onTouchEvent(event);                      
+		}
+	}       
 
 	@Override
 	public Engine onCreateEngine() {
